@@ -1,0 +1,35 @@
+* {
+  user-select: none;
+}
+
+body {
+  background-color: red;
+}
+
+ul {
+  padding: 1rem;
+}
+
+.dnd-placeholder {
+  outline: 2px solid yellow;
+  /* pointer-events: none; */
+}
+
+.dnd-dragging {
+  background-color: purple !important ;
+  animation-name: dnd-wiggle-on-drag;
+  animation-duration: 200ms;
+  animation-iteration-count: infinite;
+}
+
+@keyframes dnd-wiggle-on-drag {
+  0% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1deg);
+  }
+  100% {
+    transform: rotate(-1deg);
+  }
+}
