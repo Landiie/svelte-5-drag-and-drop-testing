@@ -31,7 +31,7 @@
     // },
   ]);
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 200; i++) {
     items.push({ id: i, name: "item " + i });
   }
 </script>
@@ -41,13 +41,11 @@
     <div class="zone">
       {#each items as item, i (item.id)}
         <Draggable.Item id={item.id} itemIndex={i}>
-          <Command name={item.name}/>
+          <Command name={item.name} lineNumber={i} />
         </Draggable.Item>
       {/each}
     </div>
   </Draggable.Zone>
-
-  <!-- <Draggable.Item></Draggable.Item> -->
 </Draggable.Root>
 
 <style>
