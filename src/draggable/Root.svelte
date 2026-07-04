@@ -1,19 +1,19 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { getState, setState } from "./DraggableState.svelte";
+  import { getState as getDragState, setState } from "./DraggableState.svelte";
   import { arrayMove } from "../utils";
 
   const {
     items = $bindable(),
-    config = {},
+    dragHandle = false,
     children,
-  }: { items: any[]; config?: { test?: boolean }; children?: Snippet } = $props();
+  }: { items: any[]; dragHandle?: boolean; children?: Snippet } = $props();
 
   const DRAG_DEADZONE_X = 5;
   const DRAG_DEADZONE_Y = 5;
 
   setState(items);
-  const dragState = getState();
+  const dragState = getDragState();
 
   let clientX = $state(-1);
   let clientY = $state(-1);
@@ -38,7 +38,8 @@
         dragState.activeHoverItemIndex === dragState.mouseDownOnItemIndex ||
         (dragState.activeHoverItemIndex === dragState.mouseDownOnItemIndex - 1 &&
           dragState.placeholderPosition === "bottom") ||
-        (dragState.activeHoverItemIndex === dragState.mouseDownOnItemIndex + 1 && dragState.placeholderPosition === "top")
+        (dragState.activeHoverItemIndex === dragState.mouseDownOnItemIndex + 1 &&
+          dragState.placeholderPosition === "top")
       ) {
         resetDragState();
         return; //don't run on dropping in place
@@ -46,16 +47,14 @@
 
       console.log("dropped!");
       let offset = 0;
-      if (dragState.activeHoverItemIndex < dragState.mouseDownOnItemIndex) offset = 1
+      if (dragState.activeHoverItemIndex < dragState.mouseDownOnItemIndex) offset = 1;
       if (dragState.placeholderPosition === "bottom") {
         arrayMove(items, dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
-        console.log('bottom', dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset)
+        console.log("bottom", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
       } else {
         arrayMove(items, dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset - 1);
-        console.log('top', dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset - 1)
-
+        console.log("top", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset - 1);
       }
-
     }
     resetDragState();
   }
@@ -66,15 +65,16 @@
     dragState.mouseDownOnItemId = null;
     dragState.mouseDownOnItemElm = null;
     dragState.mouseDownOnItemIndex = null;
-    dragState.activeHoverItemIndex = null
+    dragState.mouseDownOnDragHandle = false;
+    dragState.activeHoverItemIndex = null;
   }
 
   function onmousemove(e: MouseEvent) {
     clientX = e.pageX;
     clientY = e.pageY;
 
-    if (dragVanityElm !== null) {
-    }
+    console.log(dragState.dragHandle, dragState.mouseDownOnDragHandle)
+    if (dragState.dragHandle && !dragState.mouseDownOnDragHandle) return
     if (dragState.mouseDownOnItemId === null) return;
     // console.log(e)
     if (dragState.activeDragItemId === null) {

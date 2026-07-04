@@ -25,7 +25,7 @@
   <div class="nav">
     <div class="up"></div>
     <Draggable.ItemHandle>
-      <div class="drag-handle"></div>
+      <div class="drag-handle">a</div>
     </Draggable.ItemHandle>
     <div class="down"></div>
   </div>
@@ -100,9 +100,10 @@
       background-color: red;
     }
     .drag-handle {
-      height: auto;
-      flex-grow: 3;
+      height: 100%;
+      width: 100%;
       background-color: orange;
+      /* pointer-events: none; */
     }
     /* &:hover {
       & .down {

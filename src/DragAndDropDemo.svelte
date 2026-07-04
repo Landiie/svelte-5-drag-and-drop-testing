@@ -30,12 +30,27 @@
     //   name: "item 5",
     // },
   ]);
+  let items2 = $state<item[]>([]);
 
   for (let i = 0; i < 200; i++) {
     items.push({ id: i, name: "item " + i });
   }
+  for (let i = 0; i < 10; i++) {
+    items2.push({ id: i, name: "item " + i });
+  }
 </script>
 
+<!-- <Draggable.Root bind:items={items2}>
+  <Draggable.Zone>
+    <div class="zone">
+      {#each items2 as item, i (item.id)}
+        <Draggable.Item id={item.id} itemIndex={i}>
+          <Command name={item.name} lineNumber={i} />
+        </Draggable.Item>
+      {/each}
+    </div>
+  </Draggable.Zone>
+</Draggable.Root> -->
 <Draggable.Root bind:items>
   <Draggable.Zone>
     <div class="zone">

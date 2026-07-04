@@ -16,16 +16,11 @@
   let placeholderPosition = $state<"top" | "bottom" | null>(null);
   //$inspect(isBeingDraggedOver);
 
-  function onmousedown(e: MouseEvent) {
-    if (e.button !== 0) {
-      e.preventDefault();
-      return;
-    }
-    dragState.mouseDownOnItemId = id;
-    dragState.mouseDownOnItemIndex = itemIndex;
-    dragState.mouseDownOnItemElm = elm;
-    dragState.holdXOrigin = e.clientX;
-    dragState.holdYOrigin = e.clientY;
+  // has priority over direct element being clicked (like the optional item handle)
+  // intended to let item handle (if exists) know ahead of time what item its clicking
+  function onmousedowncapture(e: MouseEvent) {
+    if (elm === null) return
+    dragState.mouseDownOnItem(e, id, itemIndex, elm)
   }
 
   function onmouseenter(e: MouseEvent) {
@@ -81,7 +76,7 @@
 {#if placeholderPosition === "top"}
   <DragPlaceholder />
 {/if}
-<div bind:this={elm} {onmousedown} {onmouseenter} {onmousemove} {onmouseleave}>
+<div bind:this={elm} {onmousedowncapture} {onmouseenter} {onmousemove} {onmouseleave}>
   {@render children?.()}
 </div>
 {#if placeholderPosition === "bottom"}
