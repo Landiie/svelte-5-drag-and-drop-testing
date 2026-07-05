@@ -4,7 +4,7 @@
   import { Draggable } from "./draggable/index.svelte";
 
   type item = {
-    id: number;
+    id: string;
     name: string;
   };
 
@@ -33,14 +33,14 @@
   let items2 = $state<item[]>([]);
 
   for (let i = 0; i < 200; i++) {
-    items.push({ id: i, name: "item " + i });
+    items.push({ id: crypto.randomUUID(), name: "item " + i });
   }
   for (let i = 0; i < 10; i++) {
-    items2.push({ id: i, name: "item " + i });
+    items2.push({ id: crypto.randomUUID(), name: "item " + i });
   }
 </script>
 
-<!-- <Draggable.Root bind:items={items2}>
+<Draggable.Root bind:items={items2}>
   <Draggable.Zone>
     <div class="zone">
       {#each items2 as item, i (item.id)}
@@ -50,7 +50,7 @@
       {/each}
     </div>
   </Draggable.Zone>
-</Draggable.Root> -->
+</Draggable.Root>
 <Draggable.Root bind:items>
   <Draggable.Zone>
     <div class="zone">

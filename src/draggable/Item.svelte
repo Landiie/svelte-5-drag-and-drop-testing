@@ -1,52 +1,60 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { getState } from "./DraggableState.svelte";
+  import { getState as getDragState } from "./DraggableState.svelte";
+  import { globalDragState } from "./DragGlobalState.svelte";
+
   import DragPlaceholder from "./DragPlaceholder.svelte";
 
-  const { children, id, itemIndex }: { children?: Snippet; id: number; itemIndex: number } = $props();
+  const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number } = $props();
 
-  const dragState = getState();
+  const dragState = getDragState();
 
   let elm: null | HTMLElement = null;
 
-  let isMouseDown = false;
-  let isDragging = $state(false);
-  let isBeingDraggedOver = $derived(dragState.activeHoverItemId === id && dragState.activeDragItemId !== null);
-  let draggedOverTargetBounds: null | DOMRect = null;
-  let placeholderPosition = $state<"top" | "bottom" | null>(null);
+  // let isMouseDown = false;
+  // let isDragging = $state(false);
+  let isBeingDraggedOver = $derived(
+    globalDragState.isDragging && globalDragState.hoverListItemIndex === itemIndex
+    &&dragState.items === globalDragState.hoverListItemOrigin,
+  );
+  // let draggedOverTargetBounds: null | DOMRect = null;
+  // let placeholderPosition = $state<"top" | "bottom" | null>(null);
   //$inspect(isBeingDraggedOver);
 
   // has priority over direct element being clicked (like the optional item handle)
   // intended to let item handle (if exists) know ahead of time what item its clicking
   function onmousedowncapture(e: MouseEvent) {
-    if (elm === null) return
-    dragState.mouseDownOnItem(e, id, itemIndex, elm)
+    if (elm === null) return;
+    globalDragState.mouseDownOnItem(e, itemIndex, dragState.items, elm);
   }
 
   function onmouseenter(e: MouseEvent) {
-    dragState.activeHoverItemId = id;
-    dragState.activeHoverItemIndex = itemIndex;
+    // globalDragState.hoverListItemIndex = id;
+    globalDragState.hoverListItemIndex = itemIndex;
+    globalDragState.hoverListItemOrigin = dragState.items;
   }
 
   function onmousemove(e: MouseEvent) {
+    console.log(isBeingDraggedOver);
     if (isBeingDraggedOver && elm !== null) {
       const bounds = elm.getBoundingClientRect();
       //console.log(e.clientY, bounds.top, bounds.top + bounds.height / 2);
       if (e.clientY > bounds.top + bounds.height / 2) {
-        placeholderPosition = "bottom";
-        dragState.placeholderPosition = "bottom";
+        // placeholderPosition = "bottom";
+        globalDragState.draggingHalf = "bottom";
       } else {
-        placeholderPosition = "top";
-        dragState.placeholderPosition = "top";
+        // placeholderPosition = "top";
+        globalDragState.draggingHalf = "top";
       }
     } else {
-      placeholderPosition = null;
-      dragState.placeholderPosition = null;
+      // placeholderPosition = null;
+      globalDragState.draggingHalf = null;
     }
   }
 
   function onmouseleave(e: MouseEvent) {
-    placeholderPosition = null;
+    // placeholderPosition = null;
+    globalDragState.draggingHalf = null;
   }
 
   // function onmouseover(e: MouseEvent) {
@@ -73,13 +81,13 @@
 </script>
 
 <!-- <svelte:window {onmouseup} {onmousemove}/> -->
-{#if placeholderPosition === "top"}
+{#if isBeingDraggedOver && globalDragState.draggingHalf === "top"}
   <DragPlaceholder />
 {/if}
 <div bind:this={elm} {onmousedowncapture} {onmouseenter} {onmousemove} {onmouseleave}>
   {@render children?.()}
 </div>
-{#if placeholderPosition === "bottom"}
+{#if isBeingDraggedOver && globalDragState.draggingHalf === "bottom"}
   <DragPlaceholder />
 {/if}
 

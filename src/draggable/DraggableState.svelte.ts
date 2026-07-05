@@ -32,17 +32,7 @@ class DragRoot {
     this.items = items;
   }
 
-  mouseDownOnItem(e: MouseEvent, itemId: number, itemIndex: number, itemElm: HTMLElement) {
-    if (e.button !== 0) {
-      e.preventDefault();
-      return;
-    }
-    this.mouseDownOnItemId = itemId;
-    this.mouseDownOnItemIndex = itemIndex;
-    this.mouseDownOnItemElm = itemElm;
-    this.holdXOrigin = e.clientX;
-    this.holdYOrigin = e.clientY;
-  }
+
 }
 
 const DRAG_SYMBOL = Symbol("drag");
