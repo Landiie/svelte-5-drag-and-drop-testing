@@ -25,7 +25,7 @@
   // intended to let item handle (if exists) know ahead of time what item its clicking
   function onmousedowncapture(e: MouseEvent) {
     if (elm === null) return;
-    globalDragState.mouseDownOnItem(e, itemIndex, dragState.items, elm);
+    globalDragState.mouseDownOnItem(e, itemIndex, dragState.items, elm, dragState.dragHandle);
   }
 
   function onmouseenter(e: MouseEvent) {

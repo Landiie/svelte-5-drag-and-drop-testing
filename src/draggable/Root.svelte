@@ -12,6 +12,7 @@
 
   setDragState(items);
   const dragState = getDragState();
+  dragState.dragHandle = dragHandle
 </script>
 
 <div class="debug-info-global" style="background-color: yellow;">

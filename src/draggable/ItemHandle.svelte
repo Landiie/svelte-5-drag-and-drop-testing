@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
   import { getState } from "./DraggableState.svelte";
+  import { globalDragState } from "./DragGlobalState.svelte";
 
   let { children }: { children: Snippet } = $props();
   const dragState = getState();
@@ -11,8 +12,7 @@
     // using the capture method of event listening, taking a higher priority
 
     //im explaining this because i KNOW this is something im gonna forget in like 2 hours
-    dragState.mouseDownOnDragHandle = true;
-    console.log('guh')
+    globalDragState.mDownOnDragHandle = true;
   }
 
   onMount(() => {

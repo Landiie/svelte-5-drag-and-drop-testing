@@ -13,6 +13,8 @@ class DragGlobalState {
   mDownListItemIndex = $state<number | null>(null);
   mDownListItemOrigin = $state<any[] | null>(null);
   mDownElm = $state<HTMLElement | null>(null);
+  mDownItemRequiresDragHandle = false
+  mDownOnDragHandle = false;
 
   mDownOriginX = -1;
   mDownOriginY = -1;
@@ -27,7 +29,7 @@ class DragGlobalState {
   hoverListItemIndex = $state<number | null>(null);
   hoverListItemOrigin = $state<any[] | null>(null);
 
-  mouseDownOnItem(e: MouseEvent, itemIndex: number, itemOriginArr: any[], itemElm: HTMLElement) {
+  mouseDownOnItem(e: MouseEvent, itemIndex: number, itemOriginArr: any[], itemElm: HTMLElement, dragHandle: boolean = false) {
     if (e.button !== 0) {
       e.preventDefault();
       return;
@@ -38,6 +40,7 @@ class DragGlobalState {
     this.mDownElm = itemElm;
     this.mDownOriginX = e.clientX;
     this.mDownOriginY = e.clientY;
+    this.mDownItemRequiresDragHandle = dragHandle
   }
 
   #isDraggingItemInSameContext() {
@@ -64,6 +67,8 @@ class DragGlobalState {
     this.mDownListItemOrigin = null;
     this.hoverListItemIndex = null;
     this.hoverListItemOrigin = null;
+    this.mDownItemRequiresDragHandle = false
+    this.mDownOnDragHandle = false;
     this.isDragging = false;
     document.body.style.cursor = "default";
     if (!this.draggingCloneElm) return;
@@ -129,7 +134,7 @@ class DragGlobalState {
 
       //   console.log(dragState.dragHandle, dragState.mouseDownOnDragHandle);
       //   if (dragState.dragHandle && !dragState.mouseDownOnDragHandle) return;
-      if (this.mDownListItemIndex === null || this.isDragging) return;
+      if (this.mDownListItemIndex === null || (this.mDownItemRequiresDragHandle && !this.mDownOnDragHandle) || this.isDragging) return;
       // console.log(e)
       if (
         e.pageX > this.mDownOriginX + DRAG_DEADZONE_X ||
