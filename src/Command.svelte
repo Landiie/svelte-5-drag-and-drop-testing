@@ -1,23 +1,7 @@
 <script lang="ts">
-  import { getState } from "./draggable/DraggableState.svelte";
   import { Draggable } from "./draggable/index.svelte";
 
-  const { name, lineNumber }: { name: string; lineNumber: number } = $props();
-
-  const dragState = getState();
-  function onmouseenter(e: MouseEvent) {
-    if (dragState.activeDragItemId !== null) return;
-    ((e.target as HTMLElement).parentNode as HTMLElement).style.minHeight = "5rem";
-    ((e.target as HTMLElement).querySelector(".up") as HTMLElement).style.flexGrow = "1";
-    ((e.target as HTMLElement).querySelector(".down") as HTMLElement).style.flexGrow = "1";
-  }
-
-  function onmouseleave(e: MouseEvent) {
-    if (dragState.activeDragItemId !== null) return;
-    ((e.target as HTMLElement).parentNode as HTMLElement).style.minHeight = "3rem";
-    ((e.target as HTMLElement).querySelector(".up") as HTMLElement).style.flexGrow = "0";
-    ((e.target as HTMLElement).querySelector(".down") as HTMLElement).style.flexGrow = "0";
-  }
+  const { name, lineNumber, cmdContent }: { name: string; lineNumber: number, cmdContent: string; } = $props();
 </script>
 
 <div class="base">
@@ -41,7 +25,7 @@
     <div class="fields">
       <div>
         <label for="">test</label>
-        <input type="text" />
+        <input type="text" value={cmdContent}/>
       </div>
       <div>
         <label for="">test</label>

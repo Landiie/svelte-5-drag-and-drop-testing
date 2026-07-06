@@ -12,29 +12,10 @@
 
   setDragState(items);
   const dragState = getDragState();
-  dragState.dragHandle = dragHandle
+  dragState.dragHandle = dragHandle;
 </script>
 
-<div class="debug-info-global" style="background-color: yellow;">
-  <p>GLOBAL drag state debug</p>
-  <p>mDownListItemIndex: {globalDragState.mDownListItemIndex}</p>
-  <p>mDownListItemOrigin: {generateHash(String(globalDragState.mDownListItemOrigin))}</p>
-  <!-- <p>mouseDownOnItemId: {dragState.mouseDownOnItemId}</p>
-  <p>mouseDownOnItemElm: {dragState.mouseDownOnItemElm}</p>
-  <p>activeDragItemId: {dragState.activeDragItemId}</p>
-  <p>activeDragItemElm: {dragState.activeDragItemElm}</p>
-  <p>activeHoverItemId: {dragState.activeHoverItemId}</p>
-  <p>placeholderPosition {dragState.placeholderPosition}</p> -->
-</div>
-
-<div class="debug-info">
-  <p>mouseDownOnItemId: {dragState.mouseDownOnItemId}</p>
-  <p>mouseDownOnItemElm: {dragState.mouseDownOnItemElm}</p>
-  <p>activeDragItemId: {dragState.activeDragItemId}</p>
-  <p>activeDragItemElm: {dragState.activeDragItemElm}</p>
-  <p>activeHoverItemId: {dragState.activeHoverItemId}</p>
-  <p>placeholderPosition {dragState.placeholderPosition}</p>
-</div>
+<div class="debug-info"></div>
 {@render children?.()}
 
 <style>

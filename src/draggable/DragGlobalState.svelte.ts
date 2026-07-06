@@ -6,18 +6,29 @@ const DRAG_DEADZONE_Y = 5;
 const SYMBOL = Symbol("drag_global");
 
 const dragVanityElm = document.createElement("div");
-dragVanityElm.classList.add("drag-vanity");
+dragVanityElm.classList.add("drag-vanity", "dnd-dragging");
 document.body.append(dragVanityElm);
 
 class DragGlobalState {
+  dragZoneTagCounter = 0;
+  createDragZoneTag() {
+    const tag = "zone" + String(this.dragZoneTagCounter);
+    this.dragZoneTagCounter++;
+    return tag;
+  }
+
   mDownListItemIndex = $state<number | null>(null);
   mDownListItemOrigin = $state<any[] | null>(null);
+  mDownListItemZoneOrigin = $state<string | null>(null);
+
   mDownElm = $state<HTMLElement | null>(null);
-  mDownItemRequiresDragHandle = false
+  mDownItemRequiresDragHandle = false;
   mDownOnDragHandle = false;
 
   mDownOriginX = -1;
   mDownOriginY = -1;
+
+  mOverDragZoneTag = $state<string | null>(null);
 
   clientX = $state(-1);
   clientY = $state(-1);
@@ -28,8 +39,21 @@ class DragGlobalState {
 
   hoverListItemIndex = $state<number | null>(null);
   hoverListItemOrigin = $state<any[] | null>(null);
+  hoverDragZoneTracker = $state<string[]>([]);
+  hoverDragZone = $derived.by(() => {
+    const res = this.hoverDragZoneTracker[this.hoverDragZoneTracker.length - 1]
+    if (res === undefined) return null
+    return res
+  });
 
-  mouseDownOnItem(e: MouseEvent, itemIndex: number, itemOriginArr: any[], itemElm: HTMLElement, dragHandle: boolean = false) {
+  mouseDownOnItem(
+    e: MouseEvent,
+    itemIndex: number,
+    itemOriginArr: any[],
+    itemElm: HTMLElement,
+    dragHandle: boolean = false,
+    itemOriginZoneTag: string | null,
+  ) {
     if (e.button !== 0) {
       e.preventDefault();
       return;
@@ -40,25 +64,30 @@ class DragGlobalState {
     this.mDownElm = itemElm;
     this.mDownOriginX = e.clientX;
     this.mDownOriginY = e.clientY;
-    this.mDownItemRequiresDragHandle = dragHandle
+    this.mDownItemRequiresDragHandle = dragHandle;
+    this.mDownListItemZoneOrigin = itemOriginZoneTag;
   }
 
-  #isDraggingItemInSameContext() {
+  isDraggingItemInSameContext() {
     return this.mDownListItemOrigin === this.hoverListItemOrigin;
   }
 
-  #isDraggingItemInSamePlace() {
-    return this.mDownListItemIndex === this.hoverListItemIndex && this.#isDraggingItemInSameContext();
+  isDraggingItemInSamePlace() {
+    return this.mDownListItemIndex === this.hoverListItemIndex && this.isDraggingItemInSameContext();
   }
 
-  #isDraggingItemDirectlyAboveItself() {
+  isDraggingItemDirectlyAboveItself() {
     if (this.mDownListItemIndex === null) return false;
-    return this.mDownListItemIndex - 1 === this.hoverListItemIndex && this.#isDraggingItemInSameContext();
+    return this.mDownListItemIndex - 1 === this.hoverListItemIndex && this.isDraggingItemInSameContext();
   }
 
-  #isDraggingItemDirectlyBelowItself() {
+  isDraggingItemDirectlyBelowItself() {
     if (this.mDownListItemIndex === null) return false;
-    return this.mDownListItemIndex + 1 === this.hoverListItemIndex && this.#isDraggingItemInSameContext();
+    return this.mDownListItemIndex + 1 === this.hoverListItemIndex && this.isDraggingItemInSameContext();
+  }
+
+  isDraggingItemInMismatchingZoneTag() {
+    return this.mDownListItemZoneOrigin !== null && this.hoverDragZone !== this.mDownListItemZoneOrigin;
   }
 
   resetDragState() {
@@ -67,9 +96,10 @@ class DragGlobalState {
     this.mDownListItemOrigin = null;
     this.hoverListItemIndex = null;
     this.hoverListItemOrigin = null;
-    this.mDownItemRequiresDragHandle = false
+    this.mDownItemRequiresDragHandle = false;
     this.mDownOnDragHandle = false;
     this.isDragging = false;
+    this.mDownListItemZoneOrigin = null;
     document.body.style.cursor = "default";
     if (!this.draggingCloneElm) return;
     dragVanityElm.removeChild(this.draggingCloneElm);
@@ -90,10 +120,11 @@ class DragGlobalState {
         this.mDownListItemOrigin !== null
       ) {
         if (
-          this.#isDraggingItemInSamePlace() ||
-          (this.#isDraggingItemDirectlyAboveItself() && this.draggingHalf === "bottom") ||
-          (this.#isDraggingItemDirectlyBelowItself() && this.draggingHalf === "top") ||
-          this.draggingHalf === null
+          this.isDraggingItemInSamePlace() ||
+          (this.isDraggingItemDirectlyAboveItself() && this.draggingHalf === "bottom") ||
+          (this.isDraggingItemDirectlyBelowItself() && this.draggingHalf === "top") ||
+          this.draggingHalf === null ||
+          this.isDraggingItemInMismatchingZoneTag()
         ) {
           this.resetDragState();
           return; //don't run on dropping in place
@@ -104,7 +135,7 @@ class DragGlobalState {
         if (this.hoverListItemIndex < this.mDownListItemIndex) offset = 1;
         if (this.draggingHalf === "bottom") {
           //fancy thing just changing which function to use if dragging across contexts or not
-          this.#isDraggingItemInSameContext()
+          this.isDraggingItemInSameContext()
             ? arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset)
             : arrayMoveToArray(
                 this.mDownListItemOrigin,
@@ -115,7 +146,7 @@ class DragGlobalState {
 
           //   console.log("bottom", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
         } else {
-          this.#isDraggingItemInSameContext()
+          this.isDraggingItemInSameContext()
             ? arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
             : arrayMoveToArray(
                 this.mDownListItemOrigin,
@@ -134,20 +165,29 @@ class DragGlobalState {
 
       //   console.log(dragState.dragHandle, dragState.mouseDownOnDragHandle);
       //   if (dragState.dragHandle && !dragState.mouseDownOnDragHandle) return;
-      if (this.mDownListItemIndex === null || (this.mDownItemRequiresDragHandle && !this.mDownOnDragHandle) || this.isDragging) return;
-      // console.log(e)
-      if (
-        e.pageX > this.mDownOriginX + DRAG_DEADZONE_X ||
-        e.pageX < this.mDownOriginX - DRAG_DEADZONE_X ||
-        e.pageY > this.mDownOriginY + DRAG_DEADZONE_Y ||
-        e.pageY < this.mDownOriginY - DRAG_DEADZONE_Y
-      ) {
-        this.isDragging = true;
+      if (this.mDownListItemIndex === null || (this.mDownItemRequiresDragHandle && !this.mDownOnDragHandle)) return;
+
+      if (!this.isDragging) {
+        if (
+          e.pageX > this.mDownOriginX + DRAG_DEADZONE_X ||
+          e.pageX < this.mDownOriginX - DRAG_DEADZONE_X ||
+          e.pageY > this.mDownOriginY + DRAG_DEADZONE_Y ||
+          e.pageY < this.mDownOriginY - DRAG_DEADZONE_Y
+        ) {
+          this.isDragging = true;
+        }
+      }
+
+      if (this.isDraggingItemInMismatchingZoneTag()) {
+        document.body.style.cursor = "not-allowed";
+      } else {
+        document.body.style.cursor = "move";
       }
     });
 
     //we can't normally use effects in non-component files, but effect.root allows us to!!
     $effect.root(() => {
+      // $inspect(this.hoverDragZone);
       //determines if a clone should be made
       $effect(() => {
         if (this.mDownElm === null || !this.isDragging || this.draggingCloneElm !== null) return;

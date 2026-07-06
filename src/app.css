@@ -5,6 +5,7 @@
 body {
   background-color: red;
   overflow-x: hidden;
+  padding: 3rem;
 }
 
 ul {

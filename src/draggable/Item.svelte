@@ -14,8 +14,9 @@
   // let isMouseDown = false;
   // let isDragging = $state(false);
   let isBeingDraggedOver = $derived(
-    globalDragState.isDragging && globalDragState.hoverListItemIndex === itemIndex
-    &&dragState.items === globalDragState.hoverListItemOrigin,
+    globalDragState.isDragging &&
+      globalDragState.hoverListItemIndex === itemIndex &&
+      dragState.items === globalDragState.hoverListItemOrigin,
   );
   // let draggedOverTargetBounds: null | DOMRect = null;
   // let placeholderPosition = $state<"top" | "bottom" | null>(null);
@@ -25,7 +26,14 @@
   // intended to let item handle (if exists) know ahead of time what item its clicking
   function onmousedowncapture(e: MouseEvent) {
     if (elm === null) return;
-    globalDragState.mouseDownOnItem(e, itemIndex, dragState.items, elm, dragState.dragHandle);
+    globalDragState.mouseDownOnItem(
+      e,
+      itemIndex,
+      dragState.items,
+      elm,
+      dragState.dragHandle,
+      globalDragState.hoverDragZone,
+    );
   }
 
   function onmouseenter(e: MouseEvent) {
@@ -34,8 +42,10 @@
     globalDragState.hoverListItemOrigin = dragState.items;
   }
 
-  function onmousemove(e: MouseEvent) {
-    console.log(isBeingDraggedOver);
+  // use capture since lists could be nested, and we'd want to process the frontmost one.
+  // this still processes each underlying item, but the end result is the frontmost.
+  function onmousemovecapture(e: MouseEvent) {
+    // console.log(isBeingDraggedOver);
     if (isBeingDraggedOver && elm !== null) {
       const bounds = elm.getBoundingClientRect();
       //console.log(e.clientY, bounds.top, bounds.top + bounds.height / 2);
@@ -78,18 +88,43 @@
   // })
 
   //
+
+  function allowedPlaceholderBottom() {
+    return (
+      isBeingDraggedOver &&
+      !globalDragState.isDraggingItemInMismatchingZoneTag() &&
+      !globalDragState.isDraggingItemInSamePlace() &&
+      !globalDragState.isDraggingItemDirectlyAboveItself() &&
+      globalDragState.draggingHalf === "bottom"
+    );
+  }
+
+  function allowedPlaceholderTop() {
+    return (
+      isBeingDraggedOver &&
+      !globalDragState.isDraggingItemInMismatchingZoneTag() &&
+      !globalDragState.isDraggingItemInSamePlace() &&
+      !globalDragState.isDraggingItemDirectlyBelowItself() &&
+      globalDragState.draggingHalf === "top"
+    );
+  }
+  $inspect(allowedPlaceholderTop())
 </script>
 
 <!-- <svelte:window {onmouseup} {onmousemove}/> -->
-{#if isBeingDraggedOver && globalDragState.draggingHalf === "top"}
+{#if allowedPlaceholderTop()}
   <DragPlaceholder />
 {/if}
-<div bind:this={elm} {onmousedowncapture} {onmouseenter} {onmousemove} {onmouseleave}>
+<div bind:this={elm} {onmousedowncapture} {onmouseenter} {onmousemovecapture} {onmouseleave}>
   {@render children?.()}
 </div>
-{#if isBeingDraggedOver && globalDragState.draggingHalf === "bottom"}
+{#if allowedPlaceholderBottom()}
   <DragPlaceholder />
 {/if}
 
 <style>
+  div {
+    width: 100%;
+    height: 100%;
+  }
 </style>
