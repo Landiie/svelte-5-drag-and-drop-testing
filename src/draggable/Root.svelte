@@ -8,11 +8,13 @@
     items = $bindable(),
     dragHandle = false,
     children,
-  }: { items: any[]; dragHandle?: boolean; children?: Snippet } = $props();
+  }: { items: any[] | undefined; dragHandle?: boolean; children?: Snippet } = $props();
 
-  setDragState(items);
-  const dragState = getDragState();
-  dragState.dragHandle = dragHandle;
+  if (items !== undefined) {
+    setDragState(items);
+    const dragState = getDragState();
+    dragState.dragHandle = dragHandle;
+  }
 </script>
 
 <div class="debug-info"></div>

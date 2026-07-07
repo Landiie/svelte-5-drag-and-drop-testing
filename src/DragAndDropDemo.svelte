@@ -6,17 +6,68 @@
   import Item from "./draggable/Item.svelte";
   import { generateHash } from "./utils";
 
-  type item = {
+  type itemType = {
     id: string;
-    name: string;
-    cmdContent: string;
+    name?: string;
+    cmdContent?: string;
+    list?: itemType[];
   };
 
-  let items = $state<item[]>([
-    // {
-    //   id: "0",
-    //   name: "item 1",
-    // },
+  let items = $state<itemType[]>([
+    {
+      id: "0n1",
+      name: "item 1",
+      cmdContent: ``,
+    },
+    {
+      id: "1n1",
+      name: "item 2",
+      cmdContent: ``,
+    },
+    {
+      id: "2n1",
+      name: "item 3",
+      cmdContent: ``,
+    },
+    {
+      id: "3n1",
+      name: "item 4",
+      cmdContent: ``,
+    },
+    {
+      id: "4n1",
+      list: [
+        {
+          id: "0n2",
+          name: "item 1",
+          cmdContent: ``,
+        },
+        {
+          id: "1n2",
+          name: "item 2",
+          cmdContent: ``,
+        },
+        {
+          id: "2n2",
+          name: "item 3",
+          cmdContent: ``,
+        },
+        {
+          id: "3n2",
+          name: "item 4",
+          cmdContent: ``,
+        },
+        // {
+        //   id: "4",
+        //   list: [],
+        // },
+      ],
+    },
+    {
+      id: "5n1",
+      name: "item 5",
+      cmdContent: ``,
+    },
     // {
     //   id: "1",
     //   name: "item 2",
@@ -34,18 +85,18 @@
     //   name: "item 5",
     // },
   ]);
-  let items2 = $state<item[]>([]);
-  let items3 = $state<item[]>([]);
+  let items2 = $state<itemType[]>([]);
+  let items3 = $state<itemType[]>([]);
 
-  for (let i = 0; i < 5; i++) {
-    items.push({ id: crypto.randomUUID(), name: "item " + i, cmdContent: `originally index ${i} from list 1` });
-  }
-  for (let i = 0; i < 10; i++) {
-    items2.push({ id: crypto.randomUUID(), name: "item " + i, cmdContent: `originally index ${i} from list 2` });
-  }
-  for (let i = 0; i < 3; i++) {
-    items3.push({ id: crypto.randomUUID(), name: "item " + i, cmdContent: `originally index ${i} from list 3` });
-  }
+  // for (let i = 0; i < 5; i++) {
+  //   items.push({ id: crypto.randomUUID(), name: "item " + i, cmdContent: `originally index ${i} from list 1` });
+  // }
+  // for (let i = 0; i < 10; i++) {
+  //   items2.push({ id: crypto.randomUUID(), name: "item " + i, cmdContent: `originally index ${i} from list 2` });
+  // }
+  // for (let i = 0; i < 3; i++) {
+  //   items3.push({ id: crypto.randomUUID(), name: "item " + i, cmdContent: `originally index ${i} from list 3` });
+  // }
 </script>
 
 <!-- for testing nested lists (hell) -->
@@ -65,40 +116,43 @@
   <p>placeholderPosition {dragState.placeholderPosition}</p> -->
 </div>
 
-<Draggable.Root bind:items={items2}>
+<Draggable.Root bind:items>
   <Draggable.Zone zoneTag={"commands"}>
     <div class="zone">
-      {#each items2 as item, i (item.id)}
+      {#each items as item, i (item.id)}
+        {#if item?.list}
         <Draggable.Item id={item.id} itemIndex={i}>
-          <Command name={item.name} lineNumber={i} cmdContent={item.cmdContent} />
-        </Draggable.Item>
-      {/each}
-      <Draggable.Item id={crypto.randomUUID()} itemIndex={items2.length}>
-        <Draggable.Root bind:items>
-          <Draggable.Zone zoneTag={"commands"}>
-            <div class="zone" style="padding: 1rem">
-              {#each items as item, i (item.id)}
-                <Draggable.Item id={item.id} itemIndex={i}>
-                  <Command name={item.name} lineNumber={i} cmdContent={item.cmdContent} />
-                </Draggable.Item>
-              {/each}
-              <Draggable.Item id={crypto.randomUUID()} itemIndex={items.length}>
-                <Draggable.Root bind:items={items3}>
-                  <Draggable.Zone zoneTag={"commands"}>
-                    <div class="zone" style="padding: 1rem">
-                      {#each items3 as item, i (item.id)}
-                        <Draggable.Item id={item.id} itemIndex={i}>
-                          <Command name={item.name} lineNumber={i} cmdContent={item.cmdContent} />
-                        </Draggable.Item>
-                      {/each}
-                    </div>
-                  </Draggable.Zone>
-                </Draggable.Root>
-              </Draggable.Item>
+          <Draggable.ItemHandle>
+            <div style="background-color: orange;">
+              a
             </div>
-          </Draggable.Zone>
-        </Draggable.Root>
-      </Draggable.Item>
+          </Draggable.ItemHandle>
+          <Draggable.Root bind:items={items[i].list}>
+            <Draggable.Zone zoneTag={"commands"}>
+              <div class="zone" style="padding: 1rem">
+                {#each items[i].list as item, i (item.id)}
+                  <Draggable.Item id={item.id} itemIndex={i}>
+                    <Command
+                      name={item.name ? item.name : "??"}
+                      lineNumber={i}
+                      cmdContent={item.cmdContent ? item.cmdContent : "wawa"}
+                    />
+                  </Draggable.Item>
+                {/each}
+              </div>
+            </Draggable.Zone>
+          </Draggable.Root>
+        </Draggable.Item>
+        {:else}
+          <Draggable.Item id={item.id} itemIndex={i}>
+            <Command
+              name={item.name ? item.name : "??"}
+              lineNumber={i}
+              cmdContent={item.cmdContent ? item.cmdContent : "wawa"}
+            />
+          </Draggable.Item>
+        {/if}
+      {/each}
     </div>
   </Draggable.Zone>
 </Draggable.Root>
