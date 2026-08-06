@@ -19,7 +19,9 @@ class DragGlobalState {
 
   mDownListItemIndex = $state<number | null>(null);
   mDownListItemOrigin = $state<any[] | null>(null);
+  mDownListItemId = $state<string | null>(null);
   mDownListItemZoneOrigin = $state<string | null>(null);
+  mDownListItemZoneOriginId = $state<string | null>(null);
 
   mDownElm = $state<HTMLElement | null>(null);
   mDownItemRequiresDragHandle = false;
@@ -40,11 +42,19 @@ class DragGlobalState {
   hoverListItemIndex = $state<number | null>(null);
   hoverListItemOrigin = $state<any[] | null>(null);
   hoverDragZoneTracker = $state<string[]>([]);
+  hoverDragZoneIdTracker = $state<string[]>([]);
   hoverDragZone = $derived.by(() => {
     const res = this.hoverDragZoneTracker[this.hoverDragZoneTracker.length - 1]
     if (res === undefined) return null
     return res
   });
+  hoverDragZoneId = $derived.by(() => {
+    const res = this.hoverDragZoneIdTracker[this.hoverDragZoneIdTracker.length - 1]
+    if (res === undefined) return null
+    return res
+  });
+
+
 
   mouseDownOnItem(
     e: MouseEvent,
@@ -53,6 +63,8 @@ class DragGlobalState {
     itemElm: HTMLElement,
     dragHandle: boolean = false,
     itemOriginZoneTag: string | null,
+    itemId: string,
+    itemZoneOriginId: string,
   ) {
     if (e.button !== 0) {
       e.preventDefault();
@@ -66,6 +78,8 @@ class DragGlobalState {
     this.mDownOriginY = e.clientY;
     this.mDownItemRequiresDragHandle = dragHandle;
     this.mDownListItemZoneOrigin = itemOriginZoneTag;
+    this.mDownListItemId = itemId
+    this.mDownListItemZoneOriginId = itemZoneOriginId
   }
 
   isDraggingItemInSameContext() {
@@ -92,6 +106,7 @@ class DragGlobalState {
 
   resetDragState() {
     this.mDownElm = null;
+    this.mDownListItemId = null;
     this.mDownListItemIndex = null;
     this.mDownListItemOrigin = null;
     this.hoverListItemIndex = null;
@@ -100,6 +115,7 @@ class DragGlobalState {
     this.mDownOnDragHandle = false;
     this.isDragging = false;
     this.mDownListItemZoneOrigin = null;
+    this.mDownListItemZoneOriginId = null;
     document.body.style.cursor = "default";
     if (!this.draggingCloneElm) return;
     dragVanityElm.removeChild(this.draggingCloneElm);

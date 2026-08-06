@@ -33,6 +33,8 @@
       elm,
       dragState.dragHandle,
       globalDragState.hoverDragZone,
+      id,
+      dragState.zoneId
     );
   }
 
