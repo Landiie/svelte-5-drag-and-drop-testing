@@ -11,7 +11,7 @@
 	}: { items: itemType[]; color?: string; visible?: boolean } = $props()
 </script>
 
-<div class="depth" style="background-color: {color ? color : 'green'};">
+<div class="depth" style:background-color={color ?? 'green'}>
 	<h1>huh</h1>
     <button onclick={() => {
         visible = !visible
