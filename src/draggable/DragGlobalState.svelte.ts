@@ -43,6 +43,7 @@ class DragGlobalState {
   hoverListItemOrigin = $state<any[] | null>(null);
   hoverDragZoneTracker = $state<string[]>([]);
   hoverDragZoneIdTracker = $state<string[]>([]);
+
   hoverDragZone = $derived.by(() => {
     const res = this.hoverDragZoneTracker[this.hoverDragZoneTracker.length - 1]
     if (res === undefined) return null
@@ -104,6 +105,10 @@ class DragGlobalState {
     return this.mDownListItemZoneOrigin !== null && this.hoverDragZone !== this.mDownListItemZoneOrigin;
   }
 
+  isDraggingItemInsideItself() {
+    return this.mDownListItemId !== null && this.hoverDragZoneIdTracker.includes(this.mDownListItemId) || this.mDownListItemId === this.hoverDragZoneId
+  }
+
   resetDragState() {
     this.mDownElm = null;
     this.mDownListItemId = null;
@@ -122,6 +127,9 @@ class DragGlobalState {
     this.draggingCloneElm = null;
   }
   constructor() {
+    $effect.root(() => {
+      $inspect(this.hoverDragZoneIdTracker)
+    })
     document.addEventListener("mouseup", (e: MouseEvent) => {
       if (e.button !== 0) {
         e.preventDefault();
@@ -140,7 +148,8 @@ class DragGlobalState {
           (this.isDraggingItemDirectlyAboveItself() && this.draggingHalf === "bottom") ||
           (this.isDraggingItemDirectlyBelowItself() && this.draggingHalf === "top") ||
           this.draggingHalf === null ||
-          this.isDraggingItemInMismatchingZoneTag()
+          this.isDraggingItemInMismatchingZoneTag() ||
+          this.isDraggingItemInsideItself()
         ) {
           this.resetDragState();
           return; //don't run on dropping in place

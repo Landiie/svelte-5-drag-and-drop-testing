@@ -4,8 +4,9 @@
   import { globalDragState } from "./DragGlobalState.svelte";
 
   import DragPlaceholder from "./DragPlaceholder.svelte";
+	import type { itemType } from "../types"
 
-  const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number } = $props();
+  const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number; } = $props();
 
   const dragState = getDragState();
 
@@ -25,7 +26,7 @@
   // has priority over direct element being clicked (like the optional item handle)
   // intended to let item handle (if exists) know ahead of time what item its clicking
   function onmousedowncapture(e: MouseEvent) {
-    if (elm === null) return;
+    if (elm === null || dragState.zoneId == null) return;
     globalDragState.mouseDownOnItem(
       e,
       itemIndex,
@@ -97,6 +98,7 @@
       !globalDragState.isDraggingItemInMismatchingZoneTag() &&
       !globalDragState.isDraggingItemInSamePlace() &&
       !globalDragState.isDraggingItemDirectlyAboveItself() &&
+      !globalDragState.isDraggingItemInsideItself() &&
       globalDragState.draggingHalf === "bottom"
     );
   }
@@ -107,6 +109,7 @@
       !globalDragState.isDraggingItemInMismatchingZoneTag() &&
       !globalDragState.isDraggingItemInSamePlace() &&
       !globalDragState.isDraggingItemDirectlyBelowItself() &&
+      !globalDragState.isDraggingItemInsideItself() &&
       globalDragState.draggingHalf === "top"
     );
   }
