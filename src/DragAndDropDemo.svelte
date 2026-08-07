@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { draggableZone } from "./attachments/draggableZone"
 	import Command from "./Command.svelte"
 	import DragAndDropDemoListRecursive from "./DragAndDropDemoListRecursive.svelte"
 	import { globalDragState } from "./draggable/DragGlobalState.svelte"
@@ -114,10 +113,118 @@
 		//   name: "item 5",
 		// },
 	])
-	let items2 = $state<itemType[]>([])
+	let items2 = $state<itemType[]>([
+		{
+			id: "0n1",
+			name: "item 1",
+			cmdContent: ``,
+		},
+		{
+			id: "1n1",
+			name: "item 2",
+			cmdContent: ``,
+		},
+		{
+			id: "2n1",
+			name: "item 3",
+			cmdContent: `RWAAAAAA`,
+		},
+		{
+			id: "3n1",
+			name: "item 4",
+			cmdContent: `aaa`,
+		},
+		{
+			id: "4n1",
+			listColor: "blue",
+			listVisible: true,
+			list: [
+				{
+					id: "0n2",
+					name: "item 1",
+					cmdContent: ``,
+				},
+				{
+					id: "1n2",
+					name: "item 2",
+					cmdContent: ``,
+				},
+				{
+					id: "2n2",
+					name: "item 3",
+					cmdContent: ``,
+				},
+				{
+					id: "a",
+					listColor: "purple",
+					listVisible: false,
+
+					list: [
+						{
+							id: "",
+							name: "item 1",
+							cmdContent: ``,
+						},
+						{
+							id: "",
+							name: "item 2",
+							cmdContent: ``,
+						},
+						{
+							id: "",
+							name: "item 3",
+							cmdContent: ``,
+						},
+						{
+							id: "",
+							name: "item 4",
+							cmdContent: ``,
+						},
+						// {
+						//   id: "4",
+						//   list: [],
+						// },
+					],
+				},
+				{
+					id: "3n2",
+					name: "item 4",
+					cmdContent: ``,
+				},
+				// {
+				//   id: "4",
+				//   list: [],
+				// },
+			],
+		},
+		{
+			id: "5n1",
+			name: "item 5",
+			cmdContent: ``,
+		},
+		// {
+		//   id: "1",
+		//   name: "item 2",
+		// },
+		// {
+		//   id: "2",
+		//   name: "item 3",
+		// },
+		// {
+		//   id: "3",
+		//   name: "item 4",
+		// },
+		// {
+		//   id: "4",
+		//   name: "item 5",
+		// },
+	])
 	let items3 = $state<itemType[]>([])
 
+	//decided that i shouldn't manually assign ids especially when working with multiple lists like that
+	//just for demo purposes
 	assignUUIDs(items)
+	assignUUIDs(items2)
 
 	function assignUUIDs(list: Record<string, any>[]) {
 		for (const item of list) {
@@ -140,9 +247,10 @@
 </script>
 
 <!-- for testing nested lists (hell) -->
-<div style="display: flex;">
+<div style="display: flex; height: 100vh;">
 	<div class="demo" style="flex-grow: 1;">
 		<DragAndDropDemoListRecursive bind:items />
+		<DragAndDropDemoListRecursive bind:items={items2} />
 	</div>
 	<div class="debug-info-global" style="background-color: yellow; flex-grow: 1;">
 		<p>GLOBAL drag state debug</p>
@@ -166,6 +274,16 @@
 	  <p>activeDragItemElm: {dragState.activeDragItemElm}</p>
 	  <p>activeHoverItemId: {dragState.activeHoverItemId}</p>
 	  <p>placeholderPosition {dragState.placeholderPosition}</p> -->
+		<div class="" style="background-color: aquamarine;">
+			<h5 style="font-size: 3rem;">drag debug</h5>
+			<h5 style="font-size: 2rem;">item down</h5>
+			<p>id: {globalDragState.mDownListItemId}</p>
+			<p>index: {globalDragState.mDownListItemIndex}</p>
+			<h5 style="font-size: 2rem;">hover target</h5>
+			<!-- <p>item index: {globalDragState.hoverlistitemid}</p> -->
+			<p>item index: {globalDragState.hoverListItemIndex}</p>
+			<p>item dragging over half: {globalDragState.draggingHalf}</p>
+		</div>
 	</div>
 </div>
 
@@ -236,12 +354,4 @@
 </Draggable.Root> -->
 
 <style>
-	/* p {
-    padding: 1rem;
-    background-color: red;
-  } */
-
-	.demo {
-		/* padding: 3rem; */
-	}
 </style>

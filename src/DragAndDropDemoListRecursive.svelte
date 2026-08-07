@@ -11,11 +11,13 @@
 	}: { items: itemType[]; color?: string; visible?: boolean } = $props()
 </script>
 
-<div class="depth" style:background-color={color ?? 'green'}>
+<div class="depth" style:background-color={color ?? "green"}>
 	<h1>huh</h1>
-    <button onclick={() => {
-        visible = !visible
-    }}>show/hide</button>
+	<button
+		onclick={() => {
+			visible = !visible
+		}}>show/hide</button
+	>
 	{#if visible}
 		<Draggable.Root bind:items>
 			<Draggable.Zone zoneTag={"commands"}>
@@ -26,7 +28,11 @@
 								<Draggable.ItemHandle>
 									<div style="background-color: orange;">a</div>
 								</Draggable.ItemHandle>
-								<DragAndDropDemoListRecursive bind:items={item.list} color={item.listColor} bind:visible={item.listVisible} />
+								<DragAndDropDemoListRecursive
+									bind:items={item.list}
+									color={item.listColor}
+									bind:visible={item.listVisible}
+								/>
 							</Draggable.Item>
 						{:else}
 							<Draggable.Item id={item.id} itemIndex={i}>

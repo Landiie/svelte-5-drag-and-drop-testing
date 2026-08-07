@@ -3,10 +3,12 @@ export function clamp(value: number, min: number, max: number) {
 }
 
 export function arrayMove(arr: any[], from: number, to: number) {
+  if (to < 0) to = 0
   arr.splice(to, 0, arr.splice(from, 1)[0]);
 }
 
 export function arrayMoveToArray(sourceArray: any[], from: number, targetArray: any[], to: number) {
+  if (to < 0) to = 0
   targetArray.splice(to, 0, sourceArray.splice(from, 1)[0]);
 }
 
