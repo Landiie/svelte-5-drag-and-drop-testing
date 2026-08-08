@@ -194,10 +194,17 @@ class DragGlobalState {
 						this.selectedListItems.push(item.id)
 					}
 				} else {
-					console.log("target, to first", itemIdx, this.selectedListItemFirst.idx)
+					//select from target, to first
+					console.log("target, to first", this.selectedListItemFirst.idx, itemIdx)
 					console.log("target id", itemId)
 					console.log("first id", this.selectedListItemFirst.id)
-					//select from target, to first
+					for (let i = this.selectedListItemFirst.idx; i > itemIdx; i--) {
+						console.log(i)
+						const item = dragState.items[i]
+						console.log("analyzing", $state.snapshot(item))
+						if (this.selectedListItems.includes(item.id)) continue
+						this.selectedListItems.push(item.id)
+					}
 				}
 				//add the actual selecting item itself if not already in
 				if (!this.selectedListItems.includes(itemId)) {
