@@ -5,7 +5,7 @@
 	import { Draggable } from "./draggable/index.svelte"
 	import Item from "./draggable/Item.svelte"
 	import type { itemType } from "./types"
-	import { generateHash } from "./utils"
+	import { generateHash, setToString } from "./utils"
 
 	let items = $state<itemType[]>([
 		{
@@ -223,14 +223,16 @@
 
 	//decided that i shouldn't manually assign ids especially when working with multiple lists like that
 	//just for demo purposes
-	assignUUIDs(items)
-	assignUUIDs(items2)
+	assignItemMeta(items)
+	assignItemMeta(items2)
 
-	function assignUUIDs(list: Record<string, any>[]) {
-		for (const item of list) {
+	function assignItemMeta(list: itemType[], nestIdx: number = 1) {
+		for (let i = 0; i < list.length; i++) {
+			const item = list[i]
 			item.id = window.crypto.randomUUID()
-			if ("list" in item) {
-				assignUUIDs(item.list)
+			item.cmdContent = `${nestIdx} wawa ${i}`
+			if ("list" in item && Array.isArray(item.list)) {
+				assignItemMeta(item.list, nestIdx + 1)
 			}
 		}
 	}
@@ -283,6 +285,16 @@
 			<!-- <p>item index: {globalDragState.hoverlistitemid}</p> -->
 			<p>item index: {globalDragState.hoverListItemIndex}</p>
 			<p>item dragging over half: {globalDragState.draggingHalf}</p>
+		</div>
+		<div class="" style="background-color: lightcoral;">
+			<h5 style="font-size: 3rem;">select debug</h5>
+			<p>items selected count: {globalDragState.selectedListItems.length}</p>
+			<p>items selected: {globalDragState.selectedListItems.toString()}</p>
+			<p>
+				items selected first: {globalDragState.selectedListItemFirst
+					? `${globalDragState.selectedListItemFirst.id},  ${globalDragState.selectedListItemFirst.idx}, ${globalDragState.selectedListItemFirst.zoneId}`
+					: ""}
+			</p>
 		</div>
 	</div>
 </div>

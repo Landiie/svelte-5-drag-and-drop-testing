@@ -5,6 +5,7 @@
   function oncontextmenu(e: Event) {
     e.preventDefault();
   }
+
 </script>
 
 <svelte:window {oncontextmenu} />

@@ -5,6 +5,7 @@
 
 	import DragPlaceholder from "./DragPlaceholder.svelte"
 	import type { itemType } from "../types"
+	import { arrayRemoveItemAll } from "../utils"
 
 	const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number } = $props()
 
@@ -19,6 +20,11 @@
 			globalDragState.hoverListItemIndex === itemIndex &&
 			dragState.items === globalDragState.hoverListItemOrigin,
 	)
+
+	const isSelected = $derived(
+		id !== undefined && dragState.zoneId !== id && globalDragState.selectedListItems.includes(id),
+	)
+
 	// let draggedOverTargetBounds: null | DOMRect = null;
 	// let placeholderPosition = $state<"top" | "bottom" | null>(null);
 	//$inspect(isBeingDraggedOver);
@@ -45,6 +51,11 @@
 		globalDragState.hoverListItemOrigin = dragState.items
 	}
 
+	function onclick(e: MouseEvent) {
+		if (elm === null) return
+		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
+	}
+
 	// use capture since lists could be nested, and we'd want to process the frontmost one.
 	// this still processes each underlying item, but the end result is the frontmost.
 	function onmousemovecapture(e: MouseEvent) {
@@ -68,6 +79,18 @@
 	function onmouseleave(e: MouseEvent) {
 		// placeholderPosition = null;
 		globalDragState.draggingHalf = null
+	}
+
+	function onfocusin(e: FocusEvent) {
+		// if (elm === null && !(e.target instanceof Element)) return
+		// //traverse up until elm matches
+		// let targetElm = e.target as HTMLElement
+		// while (targetElm !== elm) {
+		// 	if (targetElm.parentElement === null) break;
+		// 	targetElm = targetElm.parentElement
+		// }
+		// console.log('traverse result: ', targetElm === elm, targetElm, elm)
+		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 	}
 
 	// function onmouseover(e: MouseEvent) {
@@ -120,7 +143,16 @@
 {#if allowedPlaceholderTop()}
 	<DragPlaceholder />
 {/if}
-<div bind:this={elm} {onmousedowncapture} {onmouseenter} {onmousemovecapture} {onmouseleave}>
+<div
+	class:selected={isSelected}
+	bind:this={elm}
+	{onmousedowncapture}
+	{onmouseenter}
+	{onmousemovecapture}
+	{onmouseleave}
+	{onclick}
+	{onfocusin}
+>
 	{@render children?.()}
 </div>
 {#if allowedPlaceholderBottom()}
@@ -128,6 +160,11 @@
 {/if}
 
 <style>
+	.selected {
+		outline-style: solid;
+		outline-width: 0.125rem;
+		outline-color: yellow;
+	}
 	div {
 		width: 100%;
 		height: 100%;

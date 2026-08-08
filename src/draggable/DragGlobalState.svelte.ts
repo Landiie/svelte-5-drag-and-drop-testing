@@ -1,5 +1,7 @@
 import { getContext, onMount, setContext } from "svelte"
-import { arrayMove, arrayMoveToArray } from "../utils"
+import { arrayMove, arrayMoveToArray, arrayRemoveItem, arrayRemoveItemAll } from "../utils"
+import type { itemType } from "../types"
+import type { DragRoot } from "./DraggableState.svelte"
 const DRAG_DEADZONE_X = 5
 const DRAG_DEADZONE_Y = 5
 
@@ -16,6 +18,8 @@ class DragGlobalState {
 		this.dragZoneTagCounter++
 		return tag
 	}
+	mDownLeft = $state(false)
+	mDownRight = $state(false)
 
 	mDownListItemIndex = $state<number | null>(null)
 	mDownListItemOrigin = $state<any[] | null>(null)
@@ -43,6 +47,18 @@ class DragGlobalState {
 	hoverListItemOrigin = $state<any[] | null>(null)
 	hoverDragZoneTracker = $state<string[]>([])
 	hoverDragZoneIdTracker = $state<string[]>([])
+
+	//select stuff
+
+	// first selection determines which subsequent items
+	// are allowed to be selected from, must have matching
+	// zone tag and origin (so no selecting from multiple nested lists
+	// because my brain can't figure that out right now)
+	selectedListItems = $state<string[]>([])
+	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
+	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string } | null>(null)
+
+	kDownCtrl = $state(false)
 
 	hoverDragZone = $derived.by(() => {
 		const res = this.hoverDragZoneTracker[this.hoverDragZoneTracker.length - 1]
@@ -129,109 +145,228 @@ class DragGlobalState {
 		dragVanityElm.removeChild(this.draggingCloneElm)
 		this.draggingCloneElm = null
 	}
-	constructor() {
-		$effect.root(() => {
-			$inspect(this.hoverDragZoneIdTracker)
-		})
-		document.addEventListener("mouseup", (e: MouseEvent) => {
-			if (e.button !== 0) {
-				e.preventDefault()
+
+	handleItemSelect = (
+		e: MouseEvent | FocusEvent,
+		dragState: DragRoot,
+		itemId: string,
+		itemIdx: number,
+		itemElm: HTMLElement,
+	) => {
+		console.log("handleItemSelect")
+		console.log("------------------------")
+		e.stopImmediatePropagation()
+		if (e instanceof MouseEvent) {
+			console.log("mouse was used")
+			console.log("button used to trigger select: ", e.button)
+			if (this.selectedListItems.includes(itemId)) {
+				if (e.ctrlKey) {
+					//unselect item and do no further processing
+					arrayRemoveItem(this.selectedListItems, itemId)
+					return
+				}
+			}
+
+			//this handles only allowing multi-select from the first item's originating list.
+			//maybe someday i'll support selecting across multiple lists but i don't have time for that atm.
+			if (
+				this.selectedListItemFirst !== null &&
+				this.selectedListItems.length >= 1 &&
+				((dragState.zoneId !== this.selectedListItemFirst.zoneId && e.ctrlKey) ||
+					(dragState.zoneId !== this.selectedListItemFirst.zoneId && e.shiftKey))
+			)
+				return
+
+			//handles shift click logic, which, will capture all items
+			//inbetween an already selected item and the target index.
+
+			if (e.shiftKey && this.selectedListItemFirst !== null && this.selectedListItemFirst.idx !== itemIdx) {
+				console.log("shift click valid")
+				if (this.selectedListItemFirst.idx < itemIdx) {
+					//select from first, to target
+					console.log("first, to target", this.selectedListItemFirst.idx, itemIdx)
+					console.log("first id", this.selectedListItemFirst.id)
+					console.log("target id", itemId)
+					for (let i = this.selectedListItemFirst.idx + 1; i < itemIdx; i++) {
+						const item = dragState.items[i]
+						console.log("analyzing", $state.snapshot(item))
+						if (this.selectedListItems.includes(item.id)) continue
+						this.selectedListItems.push(item.id)
+					}
+				} else {
+					console.log("target, to first", itemIdx, this.selectedListItemFirst.idx)
+					console.log("target id", itemId)
+					console.log("first id", this.selectedListItemFirst.id)
+					//select from target, to first
+				}
+				//add the actual selecting item itself if not already in
+				if (!this.selectedListItems.includes(itemId)) {
+					this.selectedListItems.push(itemId)
+				}
+
 				return
 			}
-			//process drop target if any
+
+			if (e.ctrlKey !== true) {
+				console.log("ctrl not held, clearing list")
+				this.selectedListItems = []
+				this.selectedListItemFirst = null
+			}
+
+			//handles the default behavior of ctrl click, which is just select the target.
+			this.itemSelect(itemId, itemIdx, dragState)
+		} else {
+			console.log("focus was used")
+			const mouseUsed = this.mDownLeft || this.mDownRight
+			
+			if (mouseUsed) return
+
+			this.selectedListItems = []
+			this.selectedListItemFirst = null
+			this.itemSelect(itemId, itemIdx, dragState)
+		}
+	}
+
+	itemSelect = (itemId: string, itemIdx: number, dragState: DragRoot) => {
+		while (this.selectedListItems.includes(itemId)) {
+			arrayRemoveItemAll(this.selectedListItems, itemId)
+		}
+		this.selectedListItems.push(itemId)
+		if (this.selectedListItems.length === 1 && dragState.zoneId !== null) {
+			this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
+		}
+	}
+
+	handleMouseUp = (e: MouseEvent) => {
+		if (e.button === 0) this.mDownLeft = false
+		if (e.button === 1) this.mDownRight = false
+
+		if (e.button !== 0) {
+			e.preventDefault()
+			return
+		}
+		//process drop target if any
+		if (
+			this.isDragging &&
+			this.hoverListItemIndex !== null &&
+			this.hoverListItemOrigin !== null &&
+			this.mDownListItemIndex !== null &&
+			this.mDownListItemOrigin !== null
+		) {
 			if (
-				this.isDragging &&
-				this.hoverListItemIndex !== null &&
-				this.hoverListItemOrigin !== null &&
-				this.mDownListItemIndex !== null &&
-				this.mDownListItemOrigin !== null
+				this.isDraggingItemInSamePlace() ||
+				(this.isDraggingItemDirectlyAboveItself() && this.draggingHalf === "bottom") ||
+				(this.isDraggingItemDirectlyBelowItself() && this.draggingHalf === "top") ||
+				this.draggingHalf === null ||
+				this.isDraggingItemInMismatchingZoneTag() ||
+				this.isDraggingItemInsideItself()
 			) {
-				if (
-					this.isDraggingItemInSamePlace() ||
-					(this.isDraggingItemDirectlyAboveItself() && this.draggingHalf === "bottom") ||
-					(this.isDraggingItemDirectlyBelowItself() && this.draggingHalf === "top") ||
-					this.draggingHalf === null ||
-					this.isDraggingItemInMismatchingZoneTag() ||
-					this.isDraggingItemInsideItself()
-				) {
-					this.resetDragState()
-					return //don't run on dropping in place
-				}
+				this.resetDragState()
+				return //don't run on dropping in place
+			}
 
-				console.log("dropped!")
-				let offset = this.hoverListItemIndex < this.mDownListItemIndex ? 1 : 0
-				if (this.draggingHalf === "bottom") {
-					//fancy thing just changing which function to use if dragging across contexts or not
-					if (this.isDraggingItemInSameContext()) {
-						this.debugArrayMoveResult = 1
-						arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset)
-					} else {
-            // im gonna be so honest i don't really know why forcing
-            // the offset to 1 before any placeholder checks when 
-            // outside the originating list works
-						offset = 1 
-            arrayMoveToArray(
-							this.mDownListItemOrigin,
-							this.mDownListItemIndex,
-							this.hoverListItemOrigin,
-							this.hoverListItemIndex + offset,
-						)
-					}
-
-					//   console.log("bottom", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
+			console.log("dropped!")
+			let offset = this.hoverListItemIndex < this.mDownListItemIndex ? 1 : 0
+			if (this.draggingHalf === "bottom") {
+				//fancy thing just changing which function to use if dragging across contexts or not
+				if (this.isDraggingItemInSameContext()) {
+					this.debugArrayMoveResult = 1
+					arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset)
 				} else {
-					if (this.isDraggingItemInSameContext()) {
-						this.debugArrayMoveResult = 1
-						arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
-					} else {
-            // im gonna be so honest i don't really know why forcing
-            // the offset to 1 before any placeholder checks when 
-            // outside the originating list works
-            offset = 1
-						arrayMoveToArray(
-							this.mDownListItemOrigin,
-							this.mDownListItemIndex,
-							this.hoverListItemOrigin,
-							this.hoverListItemIndex + offset - 1,
-						)
-					}
-					//   console.log("top", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset - 1);
+					// im gonna be so honest i don't really know why forcing
+					// the offset to 1 before any placeholder checks when
+					// outside the originating list works
+					offset = 1
+					arrayMoveToArray(
+						this.mDownListItemOrigin,
+						this.mDownListItemIndex,
+						this.hoverListItemOrigin,
+						this.hoverListItemIndex + offset,
+					)
 				}
-			}
-			this.resetDragState()
-		})
-		document.addEventListener("mousemove", (e: MouseEvent) => {
-			this.clientX = e.pageX
-			this.clientY = e.pageY
 
-			//   console.log(dragState.dragHandle, dragState.mouseDownOnDragHandle);
-			//   if (dragState.dragHandle && !dragState.mouseDownOnDragHandle) return;
-			if (this.mDownListItemIndex === null || (this.mDownItemRequiresDragHandle && !this.mDownOnDragHandle)) return
-
-			if (!this.isDragging) {
-				if (
-					e.pageX > this.mDownOriginX + DRAG_DEADZONE_X ||
-					e.pageX < this.mDownOriginX - DRAG_DEADZONE_X ||
-					e.pageY > this.mDownOriginY + DRAG_DEADZONE_Y ||
-					e.pageY < this.mDownOriginY - DRAG_DEADZONE_Y
-				) {
-					this.isDragging = true
-				}
-			}
-
-			if (this.isDraggingItemInMismatchingZoneTag()) {
-				document.body.style.cursor = "not-allowed"
+				//   console.log("bottom", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
 			} else {
-				document.body.style.cursor = "move"
+				if (this.isDraggingItemInSameContext()) {
+					this.debugArrayMoveResult = 1
+					arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
+				} else {
+					// im gonna be so honest i don't really know why forcing
+					// the offset to 1 before any placeholder checks when
+					// outside the originating list works
+					offset = 1
+					arrayMoveToArray(
+						this.mDownListItemOrigin,
+						this.mDownListItemIndex,
+						this.hoverListItemOrigin,
+						this.hoverListItemIndex + offset - 1,
+					)
+				}
+				//   console.log("top", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset - 1);
 			}
-		})
+		}
+		this.resetDragState()
+	}
+
+	handleMouseMove = (e: MouseEvent) => {
+		this.clientX = e.pageX
+		this.clientY = e.pageY
+
+		//   console.log(dragState.dragHandle, dragState.mouseDownOnDragHandle);
+		//   if (dragState.dragHandle && !dragState.mouseDownOnDragHandle) return;
+		if (
+			e.ctrlKey === true ||
+			this.mDownListItemIndex === null ||
+			(this.mDownItemRequiresDragHandle && !this.mDownOnDragHandle)
+		)
+			return
+
+		if (!this.isDragging) {
+			if (
+				e.pageX > this.mDownOriginX + DRAG_DEADZONE_X ||
+				e.pageX < this.mDownOriginX - DRAG_DEADZONE_X ||
+				e.pageY > this.mDownOriginY + DRAG_DEADZONE_Y ||
+				e.pageY < this.mDownOriginY - DRAG_DEADZONE_Y
+			) {
+				this.isDragging = true
+			}
+		}
+
+		if (this.isDraggingItemInMismatchingZoneTag()) {
+			document.body.style.cursor = "not-allowed"
+		} else {
+			document.body.style.cursor = "move"
+		}
+	}
+	handleMouseDown = (e: MouseEvent) => {
+		if (e.button === 0) this.mDownLeft = true
+		if (e.button === 1) this.mDownRight = true
+	}
+
+	handleKeyDown = (e: KeyboardEvent) => {
+		if (e.ctrlKey) this.kDownCtrl = true
+		if (e.key === 'ArrowDown' && this.selectedListItems.length > 0) {
+			//push items down the list
+			//wip, gotta rework stored list items so it has more context
+		} 
+		
+	}
+	handleKeyUp = (e: KeyboardEvent) => {
+		if (e.ctrlKey) this.kDownCtrl = false
+	}
+	constructor() {
+		document.addEventListener("mousedown", this.handleMouseDown)
+		document.addEventListener("mouseup", this.handleMouseUp)
+		document.addEventListener("mousemove", this.handleMouseMove)
+		document.addEventListener("keydown", this.handleKeyDown)
+		document.addEventListener("keyup", this.handleKeyUp)
 
 		//we can't normally use effects in non-component files, but effect.root allows us to!!
 		$effect.root(() => {
-			// $inspect(this.hoverDragZone);
-			//determines if a clone should be made
+			//determines if a clone should be made, and to unselect everything
 			$effect(() => {
 				if (this.mDownElm === null || !this.isDragging || this.draggingCloneElm !== null) return
+				this.selectedListItems = []
 				console.log("make clone")
 				document.body.style.cursor = "move"
 				this.draggingCloneElm = this.mDownElm.cloneNode(true) as HTMLElement
@@ -245,6 +380,15 @@ class DragGlobalState {
 				dragVanityElm.style.left = this.clientX + "px"
 			})
 		})
+	}
+
+	//should never be destroyed anyways but... nice to remember what could leak
+	//if there were to be multiple instances.
+	destroy() {
+		document.removeEventListener("mouseup", this.handleMouseUp)
+		document.removeEventListener("mousemove", this.handleMouseMove)
+		document.removeEventListener("keydown", this.handleKeyDown)
+		document.removeEventListener("keyup", this.handleKeyUp)
 	}
 }
 
