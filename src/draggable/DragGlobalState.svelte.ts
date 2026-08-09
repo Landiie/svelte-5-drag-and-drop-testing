@@ -193,7 +193,7 @@ class DragGlobalState {
 				this.selectedListItemFirst !== null &&
 				this.selectedListItems.length >= 1 &&
 				((dragState.zoneId !== this.selectedListItemFirst.zoneId && e.ctrlKey) ||
-					(dragState.zoneId !== this.selectedListItemFirst.zoneId && e.shiftKey))
+					(dragState.zoneId !== this.selectedListItemFirst.zoneId && e.shiftKey) || dragState.zoneId !== this.selectedListItemFirst.zoneId && this.isDraggingSelect)
 			)
 				return
 
