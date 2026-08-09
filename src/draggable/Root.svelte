@@ -7,19 +7,23 @@
 
 	const { items = $bindable(), children }: { items: any[]; children?: Snippet } = $props()
 
+
 	setDragState(items)
 	const dragState = getDragState()
 
 	function onmousedown(e: MouseEvent) {
-    console.log('wWAUGH')
-  }
+		globalDragState.isDraggingSelect = true
+		globalDragState.dragSelectRoot = dragState
+	}
 
 	onDestroy(() => {})
 </script>
 
 <!-- <div class="debug-info"></div> -->
 {#if dragState.isRootDragRoot}
-	<!-- <ItemSelectBox /> -->
+	{#if !globalDragState.isDragging && globalDragState.isDraggingSelect && globalDragState.dragSelectRoot === dragState}
+		<ItemSelectBox />
+	{/if}
 	<div {onmousedown}>
 		{@render children?.()}
 	</div>

@@ -47,8 +47,13 @@
 
 	function onmouseenter(e: MouseEvent) {
 		// globalDragState.hoverListItemIndex = id;
+		if (elm === null) return
 		globalDragState.hoverListItemIndex = itemIndex
 		globalDragState.hoverListItemOrigin = dragState.items
+		if (globalDragState.isDraggingSelect) {
+			console.log(globalDragState.isDraggingSelect)
+			globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
+		}
 	}
 
 	function onclick(e: MouseEvent) {
@@ -82,6 +87,8 @@
 	}
 
 	function onfocusin(e: FocusEvent) {
+		if (elm === null) return
+
 		// if (elm === null && !(e.target instanceof Element)) return
 		// //traverse up until elm matches
 		// let targetElm = e.target as HTMLElement

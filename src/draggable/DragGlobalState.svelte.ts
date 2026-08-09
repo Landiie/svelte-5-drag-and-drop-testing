@@ -26,7 +26,6 @@ class DragGlobalState {
 	mDownListItemId = $state<string | null>(null)
 	mDownListItemZoneOrigin = $state<string | null>(null)
 	mDownListItemZoneOriginId = $state<string | null>(null)
-
 	mDownElm = $state<HTMLElement | null>(null)
 	mDownItemRequiresDragHandle = false
 	mDownOnDragHandle = false
@@ -38,6 +37,16 @@ class DragGlobalState {
 
 	clientX = $state(-1)
 	clientY = $state(-1)
+	mDownX = $state(-1)
+	mDownY = $state(-1)
+	mDownXDiff = $derived(this.clientX - this.mDownX)
+	mDownYDiff = $derived(this.clientY - this.mDownY)
+
+	mDownOnListItem = $derived.by(() => {
+		if (!this.mDownLeft) return false
+		if (this.mDownListItemId === null) return false
+		return true
+	})
 
 	isDragging = $state(false)
 	draggingHalf = $state<"top" | "bottom" | null>(null)
@@ -57,6 +66,9 @@ class DragGlobalState {
 	selectedListItems = $state<string[]>([])
 	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
 	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string } | null>(null)
+
+	isDraggingSelect = $state(false)
+	dragSelectRoot = $state<DragRoot | null>(null)
 
 	kDownCtrl = $state(false)
 
@@ -138,12 +150,19 @@ class DragGlobalState {
 		this.mDownItemRequiresDragHandle = false
 		this.mDownOnDragHandle = false
 		this.isDragging = false
+		this.isDraggingSelect = false
+		this.dragSelectRoot = null
 		this.mDownListItemZoneOrigin = null
 		this.mDownListItemZoneOriginId = null
 		document.body.style.cursor = "default"
 		if (!this.draggingCloneElm) return
 		dragVanityElm.removeChild(this.draggingCloneElm)
 		this.draggingCloneElm = null
+	}
+
+	clearItemSelect = () => {
+		this.selectedListItems = []
+		this.selectedListItemFirst = null
 	}
 
 	handleItemSelect = (
@@ -153,6 +172,7 @@ class DragGlobalState {
 		itemIdx: number,
 		itemElm: HTMLElement,
 	) => {
+		if (this.isDragging) return
 		console.log("handleItemSelect")
 		console.log("------------------------")
 		e.stopImmediatePropagation()
@@ -214,10 +234,9 @@ class DragGlobalState {
 				return
 			}
 
-			if (e.ctrlKey !== true) {
+			if (e.ctrlKey !== true && !this.isDraggingSelect) {
 				console.log("ctrl not held, clearing list")
-				this.selectedListItems = []
-				this.selectedListItemFirst = null
+				this.clearItemSelect()
 			}
 
 			//handles the default behavior of ctrl click, which is just select the target.
@@ -225,7 +244,7 @@ class DragGlobalState {
 		} else {
 			console.log("focus was used")
 			const mouseUsed = this.mDownLeft || this.mDownRight
-			
+
 			if (mouseUsed) return
 
 			this.selectedListItems = []
@@ -348,15 +367,16 @@ class DragGlobalState {
 	handleMouseDown = (e: MouseEvent) => {
 		if (e.button === 0) this.mDownLeft = true
 		if (e.button === 1) this.mDownRight = true
+		this.mDownX = this.clientX
+		this.mDownY = this.clientY
 	}
 
 	handleKeyDown = (e: KeyboardEvent) => {
 		if (e.ctrlKey) this.kDownCtrl = true
-		if (e.key === 'ArrowDown' && this.selectedListItems.length > 0) {
+		if (e.key === "ArrowDown" && this.selectedListItems.length > 0) {
 			//push items down the list
 			//wip, gotta rework stored list items so it has more context
-		} 
-		
+		}
 	}
 	handleKeyUp = (e: KeyboardEvent) => {
 		if (e.ctrlKey) this.kDownCtrl = false
@@ -386,6 +406,13 @@ class DragGlobalState {
 				dragVanityElm.style.top = this.clientY + "px"
 				dragVanityElm.style.left = this.clientX + "px"
 			})
+
+			//unselects everything if not clicking on an item
+			// $effect(() => {
+			// 	$inspect('mdownonlistitem', this.mDownOnListItem)
+			// 	if (this.mDownOnListItem) return
+			// 	this.clearItemSelect()
+			// })
 		})
 	}
 

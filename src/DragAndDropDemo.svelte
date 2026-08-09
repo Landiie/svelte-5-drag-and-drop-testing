@@ -288,6 +288,7 @@
 		</div>
 		<div class="" style="background-color: lightcoral;">
 			<h5 style="font-size: 3rem;">select debug</h5>
+			<p>drag select: {globalDragState.isDraggingSelect}</p>
 			<p>items selected count: {globalDragState.selectedListItems.length}</p>
 			<p>items selected: {globalDragState.selectedListItems.toString()}</p>
 			<p>
