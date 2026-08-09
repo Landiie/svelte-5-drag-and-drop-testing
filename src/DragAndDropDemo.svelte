@@ -251,7 +251,7 @@
 <!-- for testing nested lists (hell) -->
 <div style="display: flex; height: 100vh;">
 	<div class="demo" style="flex-grow: 1;">
-		<DragAndDropDemoListRecursive bind:items />
+		<DragAndDropDemoListRecursive bind:items/>
 		<DragAndDropDemoListRecursive bind:items={items2} />
 	</div>
 	<div class="debug-info-global" style="background-color: yellow; flex-grow: 1;">

@@ -51,7 +51,6 @@
 		globalDragState.hoverListItemIndex = itemIndex
 		globalDragState.hoverListItemOrigin = dragState.items
 		if (globalDragState.isDraggingSelect) {
-			console.log(globalDragState.isDraggingSelect)
 			globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 		}
 	}

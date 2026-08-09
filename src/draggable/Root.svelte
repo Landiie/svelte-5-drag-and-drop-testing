@@ -5,15 +5,17 @@
 	import { generateHash } from "../utils"
 	import ItemSelectBox from "./ItemSelectBox.svelte"
 
-	const { items = $bindable(), children }: { items: any[]; children?: Snippet } = $props()
+	const { items = $bindable(), dragSelect, children }: { items: any[]; dragSelect?: boolean; children?: Snippet } = $props()
 
 
-	setDragState(items)
+	setDragState(items, dragSelect)
 	const dragState = getDragState()
 
 	function onmousedown(e: MouseEvent) {
-		globalDragState.isDraggingSelect = true
-		globalDragState.dragSelectRoot = dragState
+		if (dragState.dragSelect === true) {
+			globalDragState.isDraggingSelect = true
+			globalDragState.dragSelectRoot = dragState
+		}
 	}
 
 	onDestroy(() => {})

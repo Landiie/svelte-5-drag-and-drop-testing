@@ -5,16 +5,17 @@ const DRAG_SYMBOL = Symbol("drag")
 
 export class DragRoot {
 	dragHandle = false
+	dragSelect = false
 	items: itemType[] = []
 	zoneTag = $state<string | null>(null)
 	zoneId = $state<string | null>(null)
 	parentZoneState = $state<DragRoot | null>(null)
 	isRootDragRoot = $state<boolean>(false)
 
-	constructor(items: itemType[], parentDraggableState: DragRoot | undefined) {
+	constructor(items: itemType[], dragSelect: boolean, parentDraggableState: DragRoot | undefined) {
 		console.log("building new zone with these items:", $state.snapshot(items))
 		this.items = items
-		
+		this.dragSelect = dragSelect
 		if (parentDraggableState) {
 			this.parentZoneState = parentDraggableState
 		} else {
@@ -39,7 +40,7 @@ export function getState() {
 	return getContext(DRAG_SYMBOL) as DragRoot
 }
 
-export function setState(items: any[]) {
+export function setState(items: any[], dragSelect: boolean = false) {
 	const parentDraggableState = getState()
-	return setContext(DRAG_SYMBOL, new DragRoot(items, parentDraggableState))
+	return setContext(DRAG_SYMBOL, new DragRoot(items, dragSelect, parentDraggableState))
 }
