@@ -66,6 +66,7 @@ class DragGlobalState {
 	selectedListItems = $state<Array<{ id: string; idx: number; zoneId: string }>>([])
 	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
 	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string } | null>(null)
+	selectedListItemLastSelected = $state<{ id: string; idx: number; zoneId: string } | null>(null)
 
 	isDraggingSelect = $state(false)
 	dragSelectRoot = $state<DragRoot | null>(null)
@@ -207,14 +208,20 @@ class DragGlobalState {
 			//handles shift click logic, which, will capture all items
 			//inbetween an already selected item and the target index.
 
-			if (e.shiftKey && this.selectedListItemFirst !== null && this.selectedListItemFirst.idx !== itemIdx) {
+			if (e.shiftKey && this.selectedListItemLastSelected !== null && this.selectedListItemLastSelected.idx !== itemIdx) {
 				console.log("shift click valid")
-				if (this.selectedListItemFirst.idx < itemIdx) {
+				//clear list if not holding ctrl
+				if (!e.ctrlKey) {
+					this.clearItemSelect()
+					// re-add the last selected item since it got cleared
+					this.selectedListItems.push(this.selectedListItemLastSelected)
+				}
+				if (this.selectedListItemLastSelected.idx < itemIdx) {
 					//select from first, to target
-					console.log("first, to target", this.selectedListItemFirst.idx, itemIdx)
-					console.log("first id", this.selectedListItemFirst.id)
+					console.log("first, to target", this.selectedListItemLastSelected.idx, itemIdx)
+					console.log("first id", this.selectedListItemLastSelected.id)
 					console.log("target id", itemId)
-					for (let i = this.selectedListItemFirst.idx + 1; i < itemIdx; i++) {
+					for (let i = this.selectedListItemLastSelected.idx + 1; i < itemIdx; i++) {
 						const item = dragState.items[i]
 						console.log("analyzing", $state.snapshot(item))
 						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
@@ -222,10 +229,10 @@ class DragGlobalState {
 					}
 				} else {
 					//select from target, to first
-					console.log("target, to first", this.selectedListItemFirst.idx, itemIdx)
+					console.log("target, to first", this.selectedListItemLastSelected.idx, itemIdx)
 					console.log("target id", itemId)
-					console.log("first id", this.selectedListItemFirst.id)
-					for (let i = this.selectedListItemFirst.idx; i > itemIdx; i--) {
+					console.log("first id", this.selectedListItemLastSelected.id)
+					for (let i = this.selectedListItemLastSelected.idx; i > itemIdx; i--) {
 						console.log(i)
 						const item = dragState.items[i]
 						console.log("analyzing", $state.snapshot(item))
@@ -262,6 +269,7 @@ class DragGlobalState {
 
 	itemSelect = (itemId: string, itemIdx: number, dragState: DragRoot) => {
 		if (dragState.zoneId === null) return
+
 		while (arrayOfObjsIncludes(this.selectedListItems, "id", itemId)) {
 			// arrayRemoveItemAll(this.selectedListItems, itemId)
 			for (let i = 0; i < this.selectedListItems.length; i++) {
@@ -277,6 +285,8 @@ class DragGlobalState {
 		if (this.selectedListItems.length === 1 && dragState.zoneId !== null) {
 			this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
 		}
+
+		this.selectedListItemLastSelected = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
 	}
 
 	handleMouseUp = (e: MouseEvent) => {
