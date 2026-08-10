@@ -73,7 +73,8 @@
 	.base {
 		display: flex;
 		overflow: hidden;
-		min-height: 3rem;
+		min-height: 2.5rem;
+		background-color: dimgrey;
 	}
 	.nav {
 		min-width: 1.5rem;

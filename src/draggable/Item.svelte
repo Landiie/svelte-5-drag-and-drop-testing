@@ -167,9 +167,10 @@
 
 <style>
 	.selected {
-		outline-style: solid;
-		outline-width: 0.125rem;
-		outline-color: yellow;
+		/* outline-style: solid; */
+		/* outline-width: 0.125rem; */
+		/* outline-color: yellow; */
+		filter: brightness(140%) !important;
 	}
 	div {
 		width: 100%;
