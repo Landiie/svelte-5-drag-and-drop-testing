@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from "svelte"
 	import { getState as getDragState } from "./DraggableState.svelte"
-	import { globalDragState } from "./DragGlobalState.svelte"
+	import { getState as getGlobalDragState } from "./DragGlobalState.svelte"
+	const globalDragState = getGlobalDragState()
 
 	import DragPlaceholder from "./DragPlaceholder.svelte"
 	import type { itemType } from "../types"

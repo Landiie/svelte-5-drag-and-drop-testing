@@ -3,7 +3,6 @@
 	import { Draggable } from "./draggable/index.svelte"
 	import DragAndDropDemoListRecursive from "./DragAndDropDemoListRecursive.svelte"
 	import type { itemType } from "./types"
-	import { globalDragState } from "./draggable/DragGlobalState.svelte"
 
 	let {
 		items = $bindable(),

@@ -1,26 +1,28 @@
-import { getContext, onMount, setContext } from "svelte"
-import { arrayMove, arrayMoveToArray, arrayOfObjsIncludes, arrayRemoveItem, arrayRemoveItemAll } from "../utils"
-import type { itemType } from "../types"
+import { getContext, setContext } from "svelte"
+import { arrayMove, arrayMoveToArray, arrayOfObjsIncludes } from "../utils"
 import type { DragRoot } from "./DraggableState.svelte"
+
 const DRAG_DEADZONE_X = 5
 const DRAG_DEADZONE_Y = 5
 
 const SYMBOL = Symbol("drag_global")
 
-const dragVanityElm = document.createElement("div")
-dragVanityElm.classList.add("drag-vanity", "dnd-dragging")
-document.body.append(dragVanityElm)
-
-class DragGlobalState {
-	dragZoneTagCounter = 0
-	createDragZoneTag() {
-		const tag = "zone" + String(this.dragZoneTagCounter)
-		this.dragZoneTagCounter++
-		return tag
-	}
+class DraggableState {
+	//general tracking
+	clientX = $state(-1)
+	clientY = $state(-1)
 	mDownLeft = $state(false)
 	mDownRight = $state(false)
+	mDownX = $state(-1)
+	mDownY = $state(-1)
+	mDownXDiff = $derived(this.clientX - this.mDownX)
+	mDownYDiff = $derived(this.clientY - this.mDownY)
+	mDownOriginX = -1
+	mDownOriginY = -1
 
+	kDownCtrl = $state(false)
+
+	//list item tracking
 	mDownListItemIndex = $state<number | null>(null)
 	mDownListItemOrigin = $state<any[] | null>(null)
 	mDownListItemId = $state<string | null>(null)
@@ -29,62 +31,7 @@ class DragGlobalState {
 	mDownElm = $state<HTMLElement | null>(null)
 	mDownItemRequiresDragHandle = false
 	mDownOnDragHandle = false
-
-	mDownOriginX = -1
-	mDownOriginY = -1
-
-	mOverDragZoneTag = $state<string | null>(null)
-
-	clientX = $state(-1)
-	clientY = $state(-1)
-	mDownX = $state(-1)
-	mDownY = $state(-1)
-	mDownXDiff = $derived(this.clientX - this.mDownX)
-	mDownYDiff = $derived(this.clientY - this.mDownY)
-
-	mDownOnListItem = $derived.by(() => {
-		if (!this.mDownLeft) return false
-		if (this.mDownListItemId === null) return false
-		return true
-	})
-
-	isDragging = $state(false)
-	draggingHalf = $state<"top" | "bottom" | null>(null)
-	draggingCloneElm = $state<HTMLElement | null>(null)
-
-	hoverListItemIndex = $state<number | null>(null)
-	hoverListItemOrigin = $state<any[] | null>(null)
-	hoverDragZoneTracker = $state<string[]>([])
-	hoverDragZoneIdTracker = $state<string[]>([])
-
-	//select stuff
-
-	// first selection determines which subsequent items
-	// are allowed to be selected from, must have matching
-	// zone tag and origin (so no selecting from multiple nested lists
-	// because my brain can't figure that out right now)
-	selectedListItems = $state<Array<{ id: string; idx: number; zoneId: string }>>([])
-	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
-	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string } | null>(null)
-	selectedListItemLastSelected = $state<{ id: string; idx: number; zoneId: string } | null>(null)
-
-	isDraggingSelect = $state(false)
-	dragSelectRoot = $state<DragRoot | null>(null)
-
-	kDownCtrl = $state(false)
-
-	hoverDragZone = $derived.by(() => {
-		const res = this.hoverDragZoneTracker[this.hoverDragZoneTracker.length - 1]
-		if (res === undefined) return null
-		return res
-	})
-	hoverDragZoneId = $derived.by(() => {
-		const res = this.hoverDragZoneIdTracker[this.hoverDragZoneIdTracker.length - 1]
-		if (res === undefined) return null
-		return res
-	})
-
-	debugArrayMoveResult = $state(0)
+	mDownOnListItem = $derived(this.mDownLeft && this.mDownListItemId !== null)
 
 	mouseDownOnItem(
 		e: MouseEvent,
@@ -111,35 +58,36 @@ class DragGlobalState {
 		this.mDownListItemId = itemId
 		this.mDownListItemZoneOriginId = itemZoneOriginId
 	}
-
-	isDraggingItemInSameContext() {
-		return this.mDownListItemOrigin === this.hoverListItemOrigin
+	//drag zone
+	dragZoneTagCounter = 0
+	createDragZoneTag() {
+		const tag = "zone" + String(this.dragZoneTagCounter)
+		this.dragZoneTagCounter++
+		return tag
 	}
+	mOverDragZoneTag = $state<string | null>(null)
 
-	isDraggingItemInSamePlace() {
-		return this.mDownListItemIndex === this.hoverListItemIndex && this.isDraggingItemInSameContext()
-	}
+	//hover
+	hoverListItemIndex = $state<number | null>(null)
+	hoverListItemOrigin = $state<any[] | null>(null)
+	hoverDragZoneTracker = $state<string[]>([])
+	hoverDragZoneIdTracker = $state<string[]>([])
+	hoverDragZone = $derived.by(() => {
+		const res = this.hoverDragZoneTracker[this.hoverDragZoneTracker.length - 1]
+		if (res === undefined) return null
+		return res
+	})
+	hoverDragZoneId = $derived.by(() => {
+		const res = this.hoverDragZoneIdTracker[this.hoverDragZoneIdTracker.length - 1]
+		if (res === undefined) return null
+		return res
+	})
 
-	isDraggingItemDirectlyAboveItself() {
-		if (this.mDownListItemIndex === null) return false
-		return this.mDownListItemIndex - 1 === this.hoverListItemIndex && this.isDraggingItemInSameContext()
-	}
-
-	isDraggingItemDirectlyBelowItself() {
-		if (this.mDownListItemIndex === null) return false
-		return this.mDownListItemIndex + 1 === this.hoverListItemIndex && this.isDraggingItemInSameContext()
-	}
-
-	isDraggingItemInMismatchingZoneTag() {
-		return this.mDownListItemZoneOrigin !== null && this.hoverDragZone !== this.mDownListItemZoneOrigin
-	}
-
-	isDraggingItemInsideItself() {
-		return (
-			(this.mDownListItemId !== null && this.hoverDragZoneIdTracker.includes(this.mDownListItemId)) ||
-			this.mDownListItemId === this.hoverDragZoneId
-		)
-	}
+	//drag
+	isDragging = $state(false)
+	draggingHalf = $state<"top" | "bottom" | null>(null)
+	draggingCloneElm = $state<HTMLElement | null>(null)
+	dragVanityElm = $state<HTMLElement | null>(null)
 
 	resetDragState() {
 		this.mDownElm = null
@@ -156,10 +104,24 @@ class DragGlobalState {
 		this.mDownListItemZoneOrigin = null
 		this.mDownListItemZoneOriginId = null
 		document.body.style.cursor = "default"
-		if (!this.draggingCloneElm) return
-		dragVanityElm.removeChild(this.draggingCloneElm)
+		if (!this.draggingCloneElm || this.dragVanityElm === null) return
+		this.dragVanityElm.removeChild(this.draggingCloneElm)
 		this.draggingCloneElm = null
 	}
+
+	//select stuff
+
+	// first selection determines which subsequent items
+	// are allowed to be selected from, must have matching
+	// zone tag and origin (so no selecting from multiple nested lists
+	// because my brain can't figure that out right now)
+	selectedListItems = $state<Array<{ id: string; idx: number; zoneId: string }>>([])
+	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
+	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string } | null>(null)
+	selectedListItemLastSelected = $state<{ id: string; idx: number; zoneId: string } | null>(null)
+
+	isDraggingSelect = $state(false)
+	dragSelectRoot = $state<DragRoot | null>(null)
 
 	clearItemSelect = () => {
 		this.selectedListItems = []
@@ -208,7 +170,11 @@ class DragGlobalState {
 			//handles shift click logic, which, will capture all items
 			//inbetween an already selected item and the target index.
 
-			if (e.shiftKey && this.selectedListItemLastSelected !== null && this.selectedListItemLastSelected.idx !== itemIdx) {
+			if (
+				e.shiftKey &&
+				this.selectedListItemLastSelected !== null &&
+				this.selectedListItemLastSelected.idx !== itemIdx
+			) {
 				console.log("shift click valid")
 				//clear list if not holding ctrl
 				if (!e.ctrlKey) {
@@ -289,6 +255,37 @@ class DragGlobalState {
 		this.selectedListItemLastSelected = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
 	}
 
+	//state checks
+	isDraggingItemInSameContext() {
+		return this.mDownListItemOrigin === this.hoverListItemOrigin
+	}
+
+	isDraggingItemInSamePlace() {
+		return this.mDownListItemIndex === this.hoverListItemIndex && this.isDraggingItemInSameContext()
+	}
+
+	isDraggingItemDirectlyAboveItself() {
+		if (this.mDownListItemIndex === null) return false
+		return this.mDownListItemIndex - 1 === this.hoverListItemIndex && this.isDraggingItemInSameContext()
+	}
+
+	isDraggingItemDirectlyBelowItself() {
+		if (this.mDownListItemIndex === null) return false
+		return this.mDownListItemIndex + 1 === this.hoverListItemIndex && this.isDraggingItemInSameContext()
+	}
+
+	isDraggingItemInMismatchingZoneTag() {
+		return this.mDownListItemZoneOrigin !== null && this.hoverDragZone !== this.mDownListItemZoneOrigin
+	}
+
+	isDraggingItemInsideItself() {
+		return (
+			(this.mDownListItemId !== null && this.hoverDragZoneIdTracker.includes(this.mDownListItemId)) ||
+			this.mDownListItemId === this.hoverDragZoneId
+		)
+	}
+
+	//global handlers
 	handleMouseUp = (e: MouseEvent) => {
 		if (e.button === 0) this.mDownLeft = false
 		if (e.button === 1) this.mDownRight = false
@@ -322,7 +319,6 @@ class DragGlobalState {
 			if (this.draggingHalf === "bottom") {
 				//fancy thing just changing which function to use if dragging across contexts or not
 				if (this.isDraggingItemInSameContext()) {
-					this.debugArrayMoveResult = 1
 					arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset)
 				} else {
 					// im gonna be so honest i don't really know why forcing
@@ -340,7 +336,6 @@ class DragGlobalState {
 				//   console.log("bottom", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
 			} else {
 				if (this.isDraggingItemInSameContext()) {
-					this.debugArrayMoveResult = 1
 					arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
 				} else {
 					// im gonna be so honest i don't really know why forcing
@@ -407,6 +402,7 @@ class DragGlobalState {
 	handleKeyUp = (e: KeyboardEvent) => {
 		if (e.ctrlKey) this.kDownCtrl = false
 	}
+
 	constructor() {
 		document.addEventListener("mousedown", this.handleMouseDown)
 		document.addEventListener("mouseup", this.handleMouseUp)
@@ -414,23 +410,28 @@ class DragGlobalState {
 		document.addEventListener("keydown", this.handleKeyDown)
 		document.addEventListener("keyup", this.handleKeyUp)
 
+		this.dragVanityElm = document.createElement("div")
+		this.dragVanityElm.classList.add("drag-vanity", "dnd-dragging")
+		document.body.append(this.dragVanityElm)
+
 		//we can't normally use effects in non-component files, but effect.root allows us to!!
 		$effect.root(() => {
 			//determines if a clone should be made, and to unselect everything
 			$effect(() => {
-				if (this.mDownElm === null || !this.isDragging || this.draggingCloneElm !== null) return
+				if (this.mDownElm === null || !this.isDragging || this.draggingCloneElm !== null || this.dragVanityElm === null)
+					return
 				this.selectedListItems = []
 				console.log("make clone")
 				document.body.style.cursor = "move"
 				this.draggingCloneElm = this.mDownElm.cloneNode(true) as HTMLElement
-				dragVanityElm.appendChild(this.draggingCloneElm)
+				this.dragVanityElm.appendChild(this.draggingCloneElm)
 			})
 
 			//updates clone position
 			$effect(() => {
-				if (this.draggingCloneElm === null) return
-				dragVanityElm.style.top = this.clientY + "px"
-				dragVanityElm.style.left = this.clientX + "px"
+				if (this.draggingCloneElm === null || this.dragVanityElm === null) return
+				this.dragVanityElm.style.top = this.clientY + "px"
+				this.dragVanityElm.style.left = this.clientX + "px"
 			})
 
 			//unselects everything if not clicking on an item
@@ -441,7 +442,6 @@ class DragGlobalState {
 			// })
 		})
 	}
-
 	//should never be destroyed anyways but... nice to remember what could leak
 	//if there were to be multiple instances.
 	destroy() {
@@ -452,4 +452,10 @@ class DragGlobalState {
 	}
 }
 
-export const globalDragState = new DragGlobalState()
+export function getState() {
+	return getContext(SYMBOL) as DraggableState
+}
+
+export function setState() {
+	return setContext(SYMBOL, new DraggableState())
+}

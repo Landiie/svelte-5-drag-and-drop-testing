@@ -1,7 +1,8 @@
 <!--I dont know if i want to use this component yet-->
 <script lang="ts">
 	import { onMount } from "svelte"
-	import { globalDragState } from "./DragGlobalState.svelte"
+	import { getState as getGlobalDragState } from "./DragGlobalState.svelte"
+	const globalDragState = getGlobalDragState()
 
 	let elm = $state<HTMLElement | null>(null)
 

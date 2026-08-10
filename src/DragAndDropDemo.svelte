@@ -1,7 +1,13 @@
 <script lang="ts">
 	import Command from "./Command.svelte"
 	import DragAndDropDemoListRecursive from "./DragAndDropDemoListRecursive.svelte"
-	import { globalDragState } from "./draggable/DragGlobalState.svelte"
+	import { getState as getGlobalDragState, setState as setGlobalDragState } from "./draggable/DragGlobalState.svelte"
+	let globalDragState = getGlobalDragState()
+	console.log('indraganddropdemo',globalDragState)
+	if (globalDragState === undefined) {
+		setGlobalDragState()
+		globalDragState = getGlobalDragState()
+	}
 	import { Draggable } from "./draggable/index.svelte"
 	import Item from "./draggable/Item.svelte"
 	import type { itemType } from "./types"

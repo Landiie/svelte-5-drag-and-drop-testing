@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from "svelte"
 	import { getState } from "./DraggableState.svelte"
-	import { globalDragState } from "./DragGlobalState.svelte"
+	import { getState as getGlobalDragState } from "./DragGlobalState.svelte"
+	const globalDragState = getGlobalDragState()
 	const dragState = getState()
 
 	const { children, zoneTag = null }: { children?: Snippet; zoneTag?: string | null } = $props()

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { getState } from "./draggable/DraggableState.svelte"
-	import { globalDragState } from "./draggable/DragGlobalState.svelte"
 	import { Draggable } from "./draggable/index.svelte"
 
 	const { name, id, lineNumber, cmdContent }: { name: string; id: string; lineNumber: number; cmdContent: string } =
