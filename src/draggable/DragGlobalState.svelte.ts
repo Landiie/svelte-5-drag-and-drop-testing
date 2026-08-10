@@ -1,5 +1,5 @@
 import { getContext, onMount, setContext } from "svelte"
-import { arrayMove, arrayMoveToArray, arrayRemoveItem, arrayRemoveItemAll } from "../utils"
+import { arrayMove, arrayMoveToArray, arrayOfObjsIncludes, arrayRemoveItem, arrayRemoveItemAll } from "../utils"
 import type { itemType } from "../types"
 import type { DragRoot } from "./DraggableState.svelte"
 const DRAG_DEADZONE_X = 5
@@ -63,7 +63,7 @@ class DragGlobalState {
 	// are allowed to be selected from, must have matching
 	// zone tag and origin (so no selecting from multiple nested lists
 	// because my brain can't figure that out right now)
-	selectedListItems = $state<string[]>([])
+	selectedListItems = $state<Array<{ id: string; idx: number; zoneId: string }>>([])
 	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
 	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string } | null>(null)
 
@@ -172,17 +172,23 @@ class DragGlobalState {
 		itemIdx: number,
 		itemElm: HTMLElement,
 	) => {
-		if (this.isDragging) return
+		if (this.isDragging || dragState.zoneId === null) return
 		console.log("handleItemSelect")
 		console.log("------------------------")
 		e.stopImmediatePropagation()
 		if (e instanceof MouseEvent) {
 			console.log("mouse was used")
 			console.log("button used to trigger select: ", e.button)
-			if (this.selectedListItems.includes(itemId)) {
+			if (arrayOfObjsIncludes(this.selectedListItems, "id", itemId)) {
 				if (e.ctrlKey) {
 					//unselect item and do no further processing
-					arrayRemoveItem(this.selectedListItems, itemId)
+					for (let i = 0; i < this.selectedListItems.length; i++) {
+						const item = this.selectedListItems[i]
+						if (item.id === itemId) {
+							this.selectedListItems = this.selectedListItems.splice(i, 1)
+							break
+						}
+					}
 					return
 				}
 			}
@@ -193,7 +199,8 @@ class DragGlobalState {
 				this.selectedListItemFirst !== null &&
 				this.selectedListItems.length >= 1 &&
 				((dragState.zoneId !== this.selectedListItemFirst.zoneId && e.ctrlKey) ||
-					(dragState.zoneId !== this.selectedListItemFirst.zoneId && e.shiftKey) || dragState.zoneId !== this.selectedListItemFirst.zoneId && this.isDraggingSelect)
+					(dragState.zoneId !== this.selectedListItemFirst.zoneId && e.shiftKey) ||
+					(dragState.zoneId !== this.selectedListItemFirst.zoneId && this.isDraggingSelect))
 			)
 				return
 
@@ -210,8 +217,8 @@ class DragGlobalState {
 					for (let i = this.selectedListItemFirst.idx + 1; i < itemIdx; i++) {
 						const item = dragState.items[i]
 						console.log("analyzing", $state.snapshot(item))
-						if (this.selectedListItems.includes(item.id)) continue
-						this.selectedListItems.push(item.id)
+						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
+						this.selectedListItems.push({ id: item.id, idx: itemIdx, zoneId: dragState.zoneId })
 					}
 				} else {
 					//select from target, to first
@@ -222,13 +229,13 @@ class DragGlobalState {
 						console.log(i)
 						const item = dragState.items[i]
 						console.log("analyzing", $state.snapshot(item))
-						if (this.selectedListItems.includes(item.id)) continue
-						this.selectedListItems.push(item.id)
+						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
+						this.selectedListItems.push({ id: item.id, idx: itemIdx, zoneId: dragState.zoneId })
 					}
 				}
 				//add the actual selecting item itself if not already in
-				if (!this.selectedListItems.includes(itemId)) {
-					this.selectedListItems.push(itemId)
+				if (!arrayOfObjsIncludes(this.selectedListItems, "id", itemId)) {
+					this.selectedListItems.push({ id: itemId, idx: itemIdx, zoneId: dragState.zoneId })
 				}
 
 				return
@@ -254,10 +261,19 @@ class DragGlobalState {
 	}
 
 	itemSelect = (itemId: string, itemIdx: number, dragState: DragRoot) => {
-		while (this.selectedListItems.includes(itemId)) {
-			arrayRemoveItemAll(this.selectedListItems, itemId)
+		if (dragState.zoneId === null) return
+		while (arrayOfObjsIncludes(this.selectedListItems, "id", itemId)) {
+			// arrayRemoveItemAll(this.selectedListItems, itemId)
+			for (let i = 0; i < this.selectedListItems.length; i++) {
+				const item = this.selectedListItems[i]
+				if (item.id === itemId) {
+					this.selectedListItems = this.selectedListItems.splice(i, 1)
+					break
+				}
+			}
 		}
-		this.selectedListItems.push(itemId)
+		this.selectedListItems.push({ id: itemId, idx: itemIdx, zoneId: dragState.zoneId })
+
 		if (this.selectedListItems.length === 1 && dragState.zoneId !== null) {
 			this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
 		}

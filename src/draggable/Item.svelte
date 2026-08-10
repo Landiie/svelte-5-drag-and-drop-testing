@@ -5,7 +5,7 @@
 
 	import DragPlaceholder from "./DragPlaceholder.svelte"
 	import type { itemType } from "../types"
-	import { arrayRemoveItemAll } from "../utils"
+	import { arrayOfObjsIncludes, arrayRemoveItemAll } from "../utils"
 
 	const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number } = $props()
 
@@ -22,7 +22,7 @@
 	)
 
 	const isSelected = $derived(
-		id !== undefined && dragState.zoneId !== id && globalDragState.selectedListItems.includes(id),
+		id !== undefined && dragState.zoneId !== id && arrayOfObjsIncludes(globalDragState.selectedListItems, "id", id),
 	)
 
 	// let draggedOverTargetBounds: null | DOMRect = null;

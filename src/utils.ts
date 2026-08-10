@@ -4,6 +4,13 @@ export function clamp(value: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, value))
 }
 
+export function arrayOfObjsIncludes<T>(arrOfObjs: T[], targetKey: string, targetValue: any) {
+	for (const obj of arrOfObjs) {
+		if ((obj as any)[targetKey] === targetValue) return true
+	}
+	return false
+}
+
 export function arrayMove(arr: any[], from: number, to: number) {
 	if (to < 0) to = 0
 	arr.splice(to, 0, arr.splice(from, 1)[0])
