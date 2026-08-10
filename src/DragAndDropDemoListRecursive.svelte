@@ -18,8 +18,9 @@
 	<h1>huh</h1>
 	<Draggable.Root bind:items>
 		<button
-			onclick={() => {
+			onclick={(e: MouseEvent) => {
 				visible = !visible
+				e.stopPropagation()
 			}}>show/hide</button
 		>
 		{#if visible}
