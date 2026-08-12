@@ -122,6 +122,11 @@
 
 	//
 
+	$effect(() => {
+		if (elm === null) return
+		dragState.itemsExtras[id] = {elm}
+	})
+
 	function allowedPlaceholderBottom() {
 		return (
 			isBeingDraggedOver &&

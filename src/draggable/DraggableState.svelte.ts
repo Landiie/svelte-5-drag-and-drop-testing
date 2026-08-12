@@ -7,6 +7,7 @@ export class DragRoot {
 	dragHandle = false
 	dragSelect = false
 	items: itemType[] = []
+	itemsExtras: Record<string, {elm: HTMLElement}> = {}
 	zoneTag = $state<string | null>(null)
 	zoneId = $state<string | null>(null)
 	parentZoneState = $state<DragRoot | null>(null)
