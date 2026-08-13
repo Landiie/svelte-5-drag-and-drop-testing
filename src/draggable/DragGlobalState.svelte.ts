@@ -189,7 +189,7 @@ class DraggableState {
 						const item = dragState.items[i]
 						console.log("analyzing", $state.snapshot(item))
 						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
-						this.selectedListItems.push({ id: item.id, idx: itemIdx, zoneId: dragState.zoneId })
+						this.selectedListItems.push({ id: item.id, idx: i, zoneId: dragState.zoneId })
 					}
 				} else {
 					//select from target, to first
@@ -201,7 +201,7 @@ class DraggableState {
 						const item = dragState.items[i]
 						console.log("analyzing", $state.snapshot(item))
 						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
-						this.selectedListItems.push({ id: item.id, idx: itemIdx, zoneId: dragState.zoneId })
+						this.selectedListItems.push({ id: item.id, idx: i, zoneId: dragState.zoneId })
 					}
 				}
 				//add the actual selecting item itself if not already in
