@@ -331,7 +331,7 @@ class DraggableState {
 							this.selectedListItems.map((a) => a.idx),
 							this.hoverListItemIndex + offset,
 						)
-						
+
 						//waits for the reordering to occur, allowing the effect that sets the new index, to run
 						await tick()
 
@@ -355,12 +355,38 @@ class DraggableState {
 					// the offset to 1 before any placeholder checks when
 					// outside the originating list works
 					offset = 1
-					arrayMoveToArray(
-						this.mDownListItemOrigin,
-						this.mDownListItemIndex,
-						this.hoverListItemOrigin,
-						this.hoverListItemIndex + offset,
-					)
+					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+						arrayMoveToArray(
+							this.mDownListItemOrigin,
+							this.selectedListItems.map((a) => a.idx),
+							this.hoverListItemOrigin,
+							this.hoverListItemIndex + offset,
+						)
+
+						//waits for the reordering to occur, allowing the effect that sets the new index, to run
+						await tick()
+
+						//reselect items to update their state
+						const targetIds = this.selectedListItems.map((v) => v.id)
+						for (const id of targetIds) {
+							this.itemSelect(
+								id,
+								this.selectedListItemFirst.context.itemsExtras[id].idx,
+								this.selectedListItemFirst.context,
+							)
+						}
+					} else {
+						// im gonna be so honest i don't really know why forcing
+						// the offset to 1 before any placeholder checks when
+						// outside the originating list works
+						// offset = 1
+						arrayMoveToArray(
+							this.mDownListItemOrigin,
+							this.mDownListItemIndex,
+							this.hoverListItemOrigin,
+							this.hoverListItemIndex + offset,
+						)
+					}
 				}
 
 				//   console.log("bottom", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
@@ -373,7 +399,7 @@ class DraggableState {
 							this.selectedListItems.map((a) => a.idx),
 							this.hoverListItemIndex + offset - 1,
 						)
-						
+
 						//waits for the reordering to occur, allowing the effect that sets the new index, to run
 						await tick()
 
@@ -397,12 +423,38 @@ class DraggableState {
 					// the offset to 1 before any placeholder checks when
 					// outside the originating list works
 					offset = 1
-					arrayMoveToArray(
-						this.mDownListItemOrigin,
-						this.mDownListItemIndex,
-						this.hoverListItemOrigin,
-						this.hoverListItemIndex + offset - 1,
-					)
+					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+						arrayMoveToArray(
+							this.mDownListItemOrigin,
+							this.selectedListItems.map((a) => a.idx),
+							this.hoverListItemOrigin,
+							this.hoverListItemIndex + offset - 1,
+						)
+
+						//waits for the reordering to occur, allowing the effect that sets the new index, to run
+						await tick()
+
+						//reselect items to update their state
+						const targetIds = this.selectedListItems.map((v) => v.id)
+						for (const id of targetIds) {
+							this.itemSelect(
+								id,
+								this.selectedListItemFirst.context.itemsExtras[id].idx,
+								this.selectedListItemFirst.context,
+							)
+						}
+					} else {
+						// im gonna be so honest i don't really know why forcing
+						// the offset to 1 before any placeholder checks when
+						// outside the originating list works
+						// offset = 1
+						arrayMoveToArray(
+							this.mDownListItemOrigin,
+							this.mDownListItemIndex,
+							this.hoverListItemOrigin,
+							this.hoverListItemIndex + offset - 1,
+						)
+					}
 				}
 				//   console.log("top", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset - 1);
 			}
