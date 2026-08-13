@@ -7,14 +7,14 @@ export class DragRoot {
 	dragHandle = false
 	dragSelect = false
 	items: itemType[] = []
-	itemsExtras: Record<string, {elm: HTMLElement}> = {}
+	itemsExtras: Record<string, {elm: HTMLElement, idx: number}> = {}
 	zoneTag = $state<string | null>(null)
 	zoneId = $state<string | null>(null)
 	parentZoneState = $state<DragRoot | null>(null)
 	isRootDragRoot = $state<boolean>(false)
 
 	constructor(items: itemType[], dragSelect: boolean, parentDraggableState: DragRoot | undefined) {
-		console.log("building new zone with these items:", $state.snapshot(items))
+		//console.log("building new zone with these items:", $state.snapshot(items))
 		this.items = items
 		this.dragSelect = dragSelect
 		if (parentDraggableState) {

@@ -11,9 +11,25 @@ export function arrayOfObjsIncludes<T>(arrOfObjs: T[], targetKey: string, target
 	return false
 }
 
-export function arrayMove(arr: any[], from: number, to: number) {
+export function arrayMove<T>(arr: T[], from: number|number[], to: number) {
+	console.log('arr move stuff')
+	console.log($state.snapshot(arr), from, to)
+	let arrRes: T[] = []
+	let processed = 0;
+	if (Array.isArray(from)) {
+		for (let i = 0; i < from.length; i++) {
+			const num = from[i]
+			arrRes.push(arr.splice(num - processed, 1)[0])
+			processed++
+		}
+	} else {
+		arrRes.push(arr.splice(from, 1)[0])
+	}
+	console.log('fetched values',$state.snapshot(arrRes))
+	// to = to + processed
 	if (to < 0) to = 0
-	arr.splice(to, 0, arr.splice(from, 1)[0])
+	// if (to > arr.length - 1) to = arr.length - 1
+	arr.splice(to, 0, ...arrRes)
 }
 
 export function arrayMoveToArray(sourceArray: any[], from: number, targetArray: any[], to: number) {

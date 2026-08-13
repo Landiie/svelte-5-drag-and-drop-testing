@@ -2,13 +2,13 @@
 	import { onDestroy, onMount, type Snippet } from "svelte"
 	import { getState as getDragState, setState as setDragState } from "./DraggableState.svelte"
 	import { getState as getGlobalDragState, setState as setGlobalDragState } from "./DragGlobalState.svelte"
-	import { generateHash } from "../utils"
+	import { generateHash } from "../utils.svelte"
 	import ItemSelectBox from "./ItemSelectBox.svelte"
 
 	const { items = $bindable(), dragSelect, children }: { items: any[]; dragSelect?: boolean; children?: Snippet } = $props()
 
 	let globalDragState = getGlobalDragState()
-	console.log('globalDragStateResult', globalDragState)
+	// console.log('globalDragStateResult', globalDragState)
 	if (globalDragState === undefined) {
 		setGlobalDragState()
 		globalDragState = getGlobalDragState()

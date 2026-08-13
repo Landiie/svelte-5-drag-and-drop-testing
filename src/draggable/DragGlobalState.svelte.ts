@@ -1,5 +1,5 @@
-import { getContext, setContext } from "svelte"
-import { arrayMove, arrayMoveToArray, arrayOfObjsIncludes } from "../utils"
+import { getContext, setContext, tick } from "svelte"
+import { arrayMove, arrayMoveToArray, arrayOfObjsIncludes } from "../utils.svelte"
 import type { DragRoot } from "./DraggableState.svelte"
 
 const DRAG_DEADZONE_X = 5
@@ -241,7 +241,7 @@ class DraggableState {
 			for (let i = 0; i < this.selectedListItems.length; i++) {
 				const item = this.selectedListItems[i]
 				if (item.id === itemId) {
-					this.selectedListItems = this.selectedListItems.splice(i, 1)
+					this.selectedListItems.splice(i, 1)
 					break
 				}
 			}
@@ -286,7 +286,7 @@ class DraggableState {
 	}
 
 	//global handlers
-	handleMouseUp = (e: MouseEvent) => {
+	handleMouseUp = async (e: MouseEvent) => {
 		if (e.button === 0) this.mDownLeft = false
 		if (e.button === 1) this.mDownRight = false
 
@@ -315,11 +315,41 @@ class DraggableState {
 			}
 
 			console.log("dropped!")
-			let offset = this.hoverListItemIndex < this.mDownListItemIndex ? 1 : 0
+			let offset = -1
+			if (this.selectedListItems.length > 1) {
+				offset = this.hoverListItemIndex < this.selectedListItems[0].idx ? 1 : -(this.selectedListItems.length - 1)
+			} else {
+				offset = this.hoverListItemIndex < this.mDownListItemIndex ? 1 : 0
+			}
 			if (this.draggingHalf === "bottom") {
 				//fancy thing just changing which function to use if dragging across contexts or not
 				if (this.isDraggingItemInSameContext()) {
-					arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset)
+					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+						console.log("dropped multiple")
+						arrayMove(
+							this.mDownListItemOrigin,
+							this.selectedListItems.map((a) => a.idx),
+							this.hoverListItemIndex + offset,
+						)
+						
+						//waits for the reordering to occur, allowing the effect that sets the new index, to run
+						await tick()
+
+						//reselect items to update their state
+						const targetIds = this.selectedListItems.map((v) => v.id)
+						for (const id of targetIds) {
+							console.log("item id being operated on", id)
+							console.log("before item select", $state.snapshot(this.selectedListItems))
+							this.itemSelect(
+								id,
+								this.selectedListItemFirst.context.itemsExtras[id].idx,
+								this.selectedListItemFirst.context,
+							)
+							console.log("after item select", $state.snapshot(this.selectedListItems))
+						}
+					} else {
+						arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset)
+					}
 				} else {
 					// im gonna be so honest i don't really know why forcing
 					// the offset to 1 before any placeholder checks when
@@ -336,7 +366,32 @@ class DraggableState {
 				//   console.log("bottom", dragState.mouseDownOnItemIndex, dragState.activeHoverItemIndex + offset);
 			} else {
 				if (this.isDraggingItemInSameContext()) {
-					arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
+					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+						console.log("dropped multiple")
+						arrayMove(
+							this.mDownListItemOrigin,
+							this.selectedListItems.map((a) => a.idx),
+							this.hoverListItemIndex + offset - 1,
+						)
+						
+						//waits for the reordering to occur, allowing the effect that sets the new index, to run
+						await tick()
+
+						//reselect items to update their state
+						const targetIds = this.selectedListItems.map((v) => v.id)
+						for (const id of targetIds) {
+							console.log("item id being operated on", id)
+							console.log("before item select", $state.snapshot(this.selectedListItems))
+							this.itemSelect(
+								id,
+								this.selectedListItemFirst.context.itemsExtras[id].idx,
+								this.selectedListItemFirst.context,
+							)
+							console.log("after item select", $state.snapshot(this.selectedListItems))
+						}
+					} else {
+						arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
+					}
 				} else {
 					// im gonna be so honest i don't really know why forcing
 					// the offset to 1 before any placeholder checks when

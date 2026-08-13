@@ -6,7 +6,7 @@
 
 	import DragPlaceholder from "./DragPlaceholder.svelte"
 	import type { itemType } from "../types"
-	import { arrayOfObjsIncludes, arrayRemoveItemAll } from "../utils"
+	import { arrayOfObjsIncludes, arrayRemoveItemAll } from "../utils.svelte"
 
 	const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number } = $props()
 
@@ -124,7 +124,7 @@
 
 	$effect(() => {
 		if (elm === null) return
-		dragState.itemsExtras[id] = {elm}
+		dragState.itemsExtras[id] = {elm, idx: itemIndex}
 	})
 
 	function allowedPlaceholderBottom() {
@@ -148,7 +148,7 @@
 			globalDragState.draggingHalf === "top"
 		)
 	}
-	$inspect(allowedPlaceholderTop())
+	// $inspect(allowedPlaceholderTop())
 </script>
 
 <!-- <svelte:window {onmouseup} {onmousemove}/> -->

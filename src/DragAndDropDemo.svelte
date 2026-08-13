@@ -11,7 +11,7 @@
 	import { Draggable } from "./draggable/index.svelte"
 	import Item from "./draggable/Item.svelte"
 	import type { itemType } from "./types"
-	import { generateHash, setToString } from "./utils"
+	import { generateHash, setToString } from "./utils.svelte"
 
 	let items = $state<itemType[]>([
 		{
@@ -28,6 +28,36 @@
 			id: "2n1",
 			name: "item 3",
 			cmdContent: `RWAAAAAA`,
+		},
+		{
+			id: "3n1",
+			name: "item 4",
+			cmdContent: `aaa`,
+		},
+		{
+			id: "3n1",
+			name: "item 4",
+			cmdContent: `aaa`,
+		},
+		{
+			id: "3n1",
+			name: "item 4",
+			cmdContent: `aaa`,
+		},
+		{
+			id: "3n1",
+			name: "item 4",
+			cmdContent: `aaa`,
+		},
+		{
+			id: "3n1",
+			name: "item 4",
+			cmdContent: `aaa`,
+		},
+		{
+			id: "3n1",
+			name: "item 4",
+			cmdContent: `aaa`,
 		},
 		{
 			id: "3n1",
