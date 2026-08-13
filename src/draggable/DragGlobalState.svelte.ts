@@ -104,7 +104,7 @@ class DraggableState {
 		this.mDownListItemZoneOriginId = null
 		document.body.style.cursor = "default"
 		if (this.dragVanityElm === null) return
-		this.dragVanityElm.innerHTML = ''
+		this.dragVanityElm.innerHTML = ""
 	}
 
 	//select stuff
@@ -114,8 +114,9 @@ class DraggableState {
 	// zone tag and origin (so no selecting from multiple nested lists
 	// because my brain can't figure that out right now)
 	selectedListItems = $state<Array<{ id: string; idx: number; zoneId: string }>>([])
+	// selectedListItemsFiltered = $derived()
 	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
-	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string } | null>(null)
+	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string; context: DragRoot } | null>(null)
 	selectedListItemLastSelected = $state<{ id: string; idx: number; zoneId: string } | null>(null)
 
 	isDraggingSelect = $state(false)
@@ -179,6 +180,7 @@ class DraggableState {
 					this.clearItemSelect()
 					// re-add the last selected item since it got cleared
 					this.selectedListItems.push(this.selectedListItemLastSelected)
+					this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId, context: dragState }
 				}
 				if (this.selectedListItemLastSelected.idx < itemIdx) {
 					//select from first, to target
@@ -187,7 +189,7 @@ class DraggableState {
 					console.log("target id", itemId)
 					for (let i = this.selectedListItemLastSelected.idx + 1; i < itemIdx; i++) {
 						const item = dragState.items[i]
-						console.log("analyzing", $state.snapshot(item))
+						// console.log("analyzing", $state.snapshot(item))
 						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
 						this.selectedListItems.push({ id: item.id, idx: i, zoneId: dragState.zoneId })
 					}
@@ -199,7 +201,7 @@ class DraggableState {
 					for (let i = this.selectedListItemLastSelected.idx; i > itemIdx; i--) {
 						console.log(i)
 						const item = dragState.items[i]
-						console.log("analyzing", $state.snapshot(item))
+						// console.log("analyzing", $state.snapshot(item))
 						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
 						this.selectedListItems.push({ id: item.id, idx: i, zoneId: dragState.zoneId })
 					}
@@ -247,7 +249,7 @@ class DraggableState {
 		this.selectedListItems.push({ id: itemId, idx: itemIdx, zoneId: dragState.zoneId })
 
 		if (this.selectedListItems.length === 1 && dragState.zoneId !== null) {
-			this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
+			this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId, context: dragState }
 		}
 
 		this.selectedListItemLastSelected = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
@@ -414,14 +416,28 @@ class DraggableState {
 
 		//we can't normally use effects in non-component files, but effect.root allows us to!!
 		$effect.root(() => {
+			//always sort whenever the array is changed. this is a little scary because it mutates itself directly,
+			//and im not sure if this will have consequences of tracking itself or if svelte accounts for that.
+			$effect(() => {
+				this.selectedListItems.sort((a, b) => a.idx - b.idx)
+			})
+
 			//determines if a clone should be made, and to unselect everything
 			$effect(() => {
-				if (this.mDownElm === null || !this.isDragging || this.dragVanityElm === null)
-					return
-				this.selectedListItems = []
-				console.log("make clone")
+				if (this.mDownElm === null || !this.isDragging || this.dragVanityElm === null) return
+
+				// console.log("make clone", this.selectedListItems.length, $state.snapshot(this.selectedListItemFirst))
 				document.body.style.cursor = "move"
-				this.dragVanityElm.appendChild(this.mDownElm.cloneNode(true))
+				if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+					console.log("multiple clones")
+					for (const item of this.selectedListItems) {
+						console.log("making clone of elm", this.selectedListItemFirst.context.itemsExtras[item.id].elm)
+						this.dragVanityElm.appendChild(this.selectedListItemFirst.context.itemsExtras[item.id].elm.cloneNode(true))
+					}
+				} else {
+					this.dragVanityElm.appendChild(this.mDownElm.cloneNode(true))
+				}
+				// this.selectedListItems = []
 			})
 
 			//updates clone position
