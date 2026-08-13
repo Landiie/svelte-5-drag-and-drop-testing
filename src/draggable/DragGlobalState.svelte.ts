@@ -86,7 +86,6 @@ class DraggableState {
 	//drag
 	isDragging = $state(false)
 	draggingHalf = $state<"top" | "bottom" | null>(null)
-	draggingCloneElm = $state<HTMLElement | null>(null)
 	dragVanityElm = $state<HTMLElement | null>(null)
 
 	resetDragState() {
@@ -104,9 +103,8 @@ class DraggableState {
 		this.mDownListItemZoneOrigin = null
 		this.mDownListItemZoneOriginId = null
 		document.body.style.cursor = "default"
-		if (!this.draggingCloneElm || this.dragVanityElm === null) return
-		this.dragVanityElm.removeChild(this.draggingCloneElm)
-		this.draggingCloneElm = null
+		if (this.dragVanityElm === null) return
+		this.dragVanityElm.innerHTML = ''
 	}
 
 	//select stuff
@@ -418,18 +416,17 @@ class DraggableState {
 		$effect.root(() => {
 			//determines if a clone should be made, and to unselect everything
 			$effect(() => {
-				if (this.mDownElm === null || !this.isDragging || this.draggingCloneElm !== null || this.dragVanityElm === null)
+				if (this.mDownElm === null || !this.isDragging || this.dragVanityElm === null)
 					return
 				this.selectedListItems = []
 				console.log("make clone")
 				document.body.style.cursor = "move"
-				this.draggingCloneElm = this.mDownElm.cloneNode(true) as HTMLElement
-				this.dragVanityElm.appendChild(this.draggingCloneElm)
+				this.dragVanityElm.appendChild(this.mDownElm.cloneNode(true))
 			})
 
 			//updates clone position
 			$effect(() => {
-				if (this.draggingCloneElm === null || this.dragVanityElm === null) return
+				if (this.dragVanityElm === null) return
 				this.dragVanityElm.style.top = this.clientY + "px"
 				this.dragVanityElm.style.left = this.clientX + "px"
 			})
