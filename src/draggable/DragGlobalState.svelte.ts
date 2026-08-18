@@ -317,7 +317,15 @@ class DraggableState {
 			console.log("dropped!")
 			let offset = -1
 			if (this.selectedListItems.length > 1) {
-				offset = this.hoverListItemIndex < this.selectedListItems[0].idx ? 1 : -(this.selectedListItems.length - 1)
+				// offset = this.hoverListItemIndex < this.selectedListItems[0].idx ? 1 : -(this.selectedListItems.length - 1)
+				if (this.hoverListItemIndex < this.selectedListItems[0].idx) {
+					offset = 1
+				} else {
+					offset = 1
+					for (const item of this.selectedListItems) {
+						if (this.hoverListItemIndex > item.idx) offset--
+					}
+				}
 			} else {
 				offset = this.hoverListItemIndex < this.mDownListItemIndex ? 1 : 0
 			}
