@@ -1,5 +1,3 @@
-import type { SvelteSet } from "svelte/reactivity"
-
 export function clamp(value: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, value))
 }
@@ -11,9 +9,9 @@ export function arrayOfObjsIncludes<T>(arrOfObjs: T[], targetKey: string, target
 	return false
 }
 
-export function arrayMove<T>(arr: T[], from: number|number[], to: number) {
+export function arrayMove<T>(arr: T[], from: number | number[], to: number) {
 	let arrRes: T[] = []
-	let processed = 0;
+	let processed = 0
 	if (Array.isArray(from)) {
 		for (let i = 0; i < from.length; i++) {
 			const num = from[i]
@@ -30,7 +28,7 @@ export function arrayMove<T>(arr: T[], from: number|number[], to: number) {
 
 export function arrayMoveToArray<T>(sourceArray: T[], from: number | number[], targetArray: T[], to: number) {
 	let arrRes: T[] = []
-	let processed = 0;
+	let processed = 0
 	if (Array.isArray(from)) {
 		for (let i = 0; i < from.length; i++) {
 			const num = from[i]
@@ -60,15 +58,7 @@ export function arrayRemoveItemAll<T>(arr: T[], value: T) {
 		arr.splice(foundValue, 1)
 		foundValue = arr.indexOf(value)
 	}
-  return arr
-}
-
-export function setToString<T>(set: SvelteSet<T>) {
-	let str = ''
-	for (const item of set) {
-		str += item
-	}
-	return str
+	return arr
 }
 
 export function generateHash(str: string) {
