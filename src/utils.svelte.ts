@@ -42,6 +42,30 @@ export function arrayMoveToArray<T>(sourceArray: T[], from: number | number[], t
 	// if (to > arr.length - 1) to = arr.length - 1
 	targetArray.splice(to, 0, ...arrRes)
 }
+/**
+ * like arrayMoveToArray, but, takes items from multiple arrays.
+ */
+export function arraysMoveToArray<T>(sources: Array<{ arr: T[]; idx: number }>, targetArray: T[], to: number) {
+	let arrRes: T[] = []
+	const processedMap = new Map<T[], number>()
+	for (let i = 0; i < sources.length; i++) {
+		const source = sources[i]
+		let processed = processedMap.get(source.arr)
+		if (processed === undefined) {
+			processed = 0
+			processedMap.set(source.arr, 0)
+		}
+		arrRes.push(source.arr.splice(source.idx - processed, 1)[0])
+		processedMap.set(source.arr, (processedMap.get(source.arr) as number) + 1)
+	}
+	//same thing as the processed stuff, but, applying it to the destination
+	if (processedMap.has(targetArray)) {
+		to -= (processedMap.get(targetArray) as number)
+	}
+	if (to < 0) to = 0
+	// if (to > arr.length - 1) to = arr.length - 1
+	targetArray.splice(to, 0, ...arrRes)
+}
 
 export function arrayRemoveItem<T>(arr: Array<T>, value: T) {
 	const idx = arr.indexOf(value)
