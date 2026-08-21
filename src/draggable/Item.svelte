@@ -7,6 +7,7 @@
 	import DragPlaceholder from "./DragPlaceholder.svelte"
 	import type { itemType } from "../types"
 	import { arrayOfObjsIncludes, arrayRemoveItemAll } from "../utils"
+	import { Draggable } from "./index.svelte"
 
 	const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number } = $props()
 
@@ -15,6 +16,8 @@
 	const ITEM_SELECT_CLICK_THRESHOLD = 5
 
 	let elm: null | HTMLElement = null
+
+	let mDown = false;
 
 	// let isMouseDown = false;
 	// let isDragging = $state(false);
@@ -36,14 +39,24 @@
 	// has priority over direct element being clicked (like the optional item handle)
 	// intended to let item handle (if exists) know ahead of time what item its clicking
 	function onmousedowncapture(e: MouseEvent) {
-		if (elm === null || dragState.zoneId == null) return
-		globalDragState.mouseDownOnItem(
-			e,
-			itemIndex,
-			id,
-			elm,
-			dragState
-		)
+		if (elm === null) return
+		// if (!e.ctrlKey || !e.shiftKey) {
+		// 	globalDragState.clearItemSelect()
+		// }
+		globalDragState.mouseDownOnItem(e, itemIndex, id, elm, dragState)
+	}
+
+	function onmousedown(e: MouseEvent) {
+		if (elm === null) return
+		mDown = true
+		if (arrayOfObjsIncludes(globalDragState.selectedListItems, "id", id)) return
+		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
+	}
+
+	function onmouseup(e: MouseEvent) {
+		// if (!mDown || elm === null) return
+		// mDown = false
+		// globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 	}
 
 	function onmouseenter(e: MouseEvent) {
@@ -183,6 +196,8 @@
 	class:selected={isSelected}
 	bind:this={elm}
 	{onmousedowncapture}
+	{onmousedown}
+	{onmouseup}
 	{onmouseenter}
 	{onmousemovecapture}
 	{onmouseleave}

@@ -27,8 +27,6 @@ class DraggableState {
 	// mDownListItemOrigin = $state<any[] | null>(null)
 	mDownListItemId = $state<string | null>(null)
 	mDownListItemContext = $state<DragRoot | null>(null)
-	mDownListItemZoneOrigin = $state<string | null>(null)
-	mDownListItemZoneOriginId = $state<string | null>(null)
 	mDownElm = $state<HTMLElement | null>(null)
 	mDownItemRequiresDragHandle = false
 	mDownOnDragHandle = false
@@ -47,9 +45,7 @@ class DraggableState {
 		this.mDownOriginX = e.clientX
 		this.mDownOriginY = e.clientY
 		this.mDownItemRequiresDragHandle = itemContext.dragHandle
-		this.mDownListItemZoneOrigin = itemContext.zoneTag
 		this.mDownListItemId = itemId
-		this.mDownListItemZoneOriginId = itemContext.zoneId
 	}
 	//drag zone
 	dragZoneTagCounter = 0
@@ -97,8 +93,6 @@ class DraggableState {
 		this.isDragging = false
 		this.isDraggingSelect = false
 		this.dragSelectRoot = null
-		this.mDownListItemZoneOrigin = null
-		this.mDownListItemZoneOriginId = null
 		document.body.style.cursor = "default"
 		if (this.dragVanityElm === null) return
 		this.dragVanityElm.innerHTML = ""
@@ -276,7 +270,7 @@ class DraggableState {
 	}
 
 	isDraggingItemInMismatchingZoneTag() {
-		return this.mDownListItemZoneOrigin !== null && this.hoverDragZone !== this.mDownListItemZoneOrigin
+		return this.hoverZoneContext !== null && this.hoverDragZone !== this.hoverZoneContext.zoneTag
 	}
 
 	isDraggingItemInsideItself() {

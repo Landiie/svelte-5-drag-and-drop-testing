@@ -295,8 +295,6 @@
 		<h5 style="font-size: 2rem;">item down</h5>
 		<p>id: {globalDragState.mDownListItemId}</p>
 		<p>index: {globalDragState.mDownListItemIndex}</p>
-		<p>zone origin id: {globalDragState.mDownListItemZoneOriginId}</p>
-		<p>mDownListItemZoneOrigin: {globalDragState.mDownListItemZoneOrigin}</p>
 		<h5 style="font-size: 2rem;">hovering over list</h5>
 		<p>index: {globalDragState.hoverListItemIndex}</p>
 		<p>origin (list ref): {"NOT SHOWN"}</p>
