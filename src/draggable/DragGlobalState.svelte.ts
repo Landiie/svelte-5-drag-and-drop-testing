@@ -115,11 +115,11 @@ class DraggableState {
 	// are allowed to be selected from, must have matching
 	// zone tag and origin (so no selecting from multiple nested lists
 	// because my brain can't figure that out right now)
-	selectedListItems = $state<Array<{ id: string; idx: number; zoneId: string }>>([])
+	selectedListItems = $state<Array<{ id: string; idx: number; context: DragRoot }>>([])
 	// selectedListItemsFiltered = $derived()
 	// selectedListItemFirst = $derived(this.selectedListItems[0] ? this.selectedListItems[0] : "")
-	selectedListItemFirst = $state<{ id: string; idx: number; zoneId: string; context: DragRoot } | null>(null)
-	selectedListItemLastSelected = $state<{ id: string; idx: number; zoneId: string } | null>(null)
+	selectedListItemFirst = $state<{ id: string; idx: number; context: DragRoot } | null>(null)
+	selectedListItemLastSelected = $state<{ id: string; idx: number; context: DragRoot } | null>(null)
 
 	isDraggingSelect = $state(false)
 	dragSelectRoot = $state<DragRoot | null>(null)
@@ -162,9 +162,9 @@ class DraggableState {
 			if (
 				this.selectedListItemFirst !== null &&
 				this.selectedListItems.length >= 1 &&
-				((dragState.zoneId !== this.selectedListItemFirst.zoneId && e.ctrlKey) ||
-					(dragState.zoneId !== this.selectedListItemFirst.zoneId && e.shiftKey) ||
-					(dragState.zoneId !== this.selectedListItemFirst.zoneId && this.isDraggingSelect))
+				((dragState.zoneId !== this.selectedListItemFirst.context.zoneId && e.ctrlKey) ||
+					(dragState.zoneId !== this.selectedListItemFirst.context.zoneId && e.shiftKey) ||
+					(dragState.zoneId !== this.selectedListItemFirst.context.zoneId && this.isDraggingSelect))
 			)
 				return
 
@@ -182,7 +182,7 @@ class DraggableState {
 					this.clearItemSelect()
 					// re-add the last selected item since it got cleared
 					this.selectedListItems.push(this.selectedListItemLastSelected)
-					this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId, context: dragState }
+					this.selectedListItemFirst = { id: itemId, idx: itemIdx, context: dragState }
 				}
 				if (this.selectedListItemLastSelected.idx < itemIdx) {
 					//select from first, to target
@@ -193,7 +193,7 @@ class DraggableState {
 						const item = dragState.items[i]
 						// console.log("analyzing", $state.snapshot(item))
 						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
-						this.selectedListItems.push({ id: item.id, idx: i, zoneId: dragState.zoneId })
+						this.selectedListItems.push({ id: item.id, idx: i, context: dragState })
 					}
 				} else {
 					//select from target, to first
@@ -205,12 +205,12 @@ class DraggableState {
 						const item = dragState.items[i]
 						// console.log("analyzing", $state.snapshot(item))
 						if (arrayOfObjsIncludes(this.selectedListItems, "id", item.id)) continue
-						this.selectedListItems.push({ id: item.id, idx: i, zoneId: dragState.zoneId })
+						this.selectedListItems.push({ id: item.id, idx: i, context: dragState })
 					}
 				}
 				//add the actual selecting item itself if not already in
 				if (!arrayOfObjsIncludes(this.selectedListItems, "id", itemId)) {
-					this.selectedListItems.push({ id: itemId, idx: itemIdx, zoneId: dragState.zoneId })
+					this.selectedListItems.push({ id: itemId, idx: itemIdx, context: dragState })
 				}
 
 				return
@@ -248,13 +248,13 @@ class DraggableState {
 				}
 			}
 		}
-		this.selectedListItems.push({ id: itemId, idx: itemIdx, zoneId: dragState.zoneId })
+		this.selectedListItems.push({ id: itemId, idx: itemIdx, context: dragState })
 
 		if (this.selectedListItems.length === 1 && dragState.zoneId !== null) {
-			this.selectedListItemFirst = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId, context: dragState }
+			this.selectedListItemFirst = { id: itemId, idx: itemIdx, context: dragState }
 		}
 
-		this.selectedListItemLastSelected = { id: itemId, idx: itemIdx, zoneId: dragState.zoneId }
+		this.selectedListItemLastSelected = { id: itemId, idx: itemIdx, context: dragState }
 	}
 
 	//state checks
@@ -365,7 +365,12 @@ class DraggableState {
 					// the offset to 1 before any placeholder checks when
 					// outside the originating list works
 					offset = 1
-					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null && this.hoverListItemContext !== null && this.selectedListItemLastSelected !== null) {
+					if (
+						this.selectedListItems.length > 1 &&
+						this.selectedListItemFirst !== null &&
+						this.hoverListItemContext !== null &&
+						this.selectedListItemLastSelected !== null
+					) {
 						const targetIds = this.selectedListItems.map((a) => a.id)
 						arrayMoveToArray(
 							this.mDownListItemOrigin,
@@ -384,11 +389,7 @@ class DraggableState {
 
 						//reselect items to update their state
 						for (const id of targetIds) {
-							this.itemSelect(
-								id,
-								this.hoverListItemContext.itemsExtras[id].idx,
-								this.hoverListItemContext,
-							)
+							this.itemSelect(id, this.hoverListItemContext.itemsExtras[id].idx, this.hoverListItemContext)
 						}
 						//update the context of first selected (and last selected?) to new list
 						this.selectedListItemFirst.context = this.hoverListItemContext
@@ -441,7 +442,11 @@ class DraggableState {
 					// outside the originating list works
 
 					offset = 1
-					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null && this.hoverListItemContext !== null) {
+					if (
+						this.selectedListItems.length > 1 &&
+						this.selectedListItemFirst !== null &&
+						this.hoverListItemContext !== null
+					) {
 						const targetIds = this.selectedListItems.map((v) => v.id)
 						arrayMoveToArray(
 							this.mDownListItemOrigin,
@@ -460,11 +465,7 @@ class DraggableState {
 
 						//reselect items to update their state
 						for (const id of targetIds) {
-							this.itemSelect(
-								id,
-								this.hoverListItemContext.itemsExtras[id].idx,
-								this.hoverListItemContext,
-							)
+							this.itemSelect(id, this.hoverListItemContext.itemsExtras[id].idx, this.hoverListItemContext)
 						}
 						//update the context of first selected (and last selected?) to new list
 						this.selectedListItemFirst.context = this.hoverListItemContext
