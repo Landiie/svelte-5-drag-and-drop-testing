@@ -24,8 +24,9 @@ class DraggableState {
 
 	//list item tracking
 	mDownListItemIndex = $state<number | null>(null)
-	mDownListItemOrigin = $state<any[] | null>(null)
+	// mDownListItemOrigin = $state<any[] | null>(null)
 	mDownListItemId = $state<string | null>(null)
+	mDownListItemContext = $state<DragRoot | null>(null)
 	mDownListItemZoneOrigin = $state<string | null>(null)
 	mDownListItemZoneOriginId = $state<string | null>(null)
 	mDownElm = $state<HTMLElement | null>(null)
@@ -33,30 +34,22 @@ class DraggableState {
 	mDownOnDragHandle = false
 	mDownOnListItem = $derived(this.mDownLeft && this.mDownListItemId !== null)
 
-	mouseDownOnItem(
-		e: MouseEvent,
-		itemIndex: number,
-		itemOriginArr: any[],
-		itemElm: HTMLElement,
-		dragHandle: boolean = false,
-		itemOriginZoneTag: string | null,
-		itemId: string,
-		itemZoneOriginId: string,
-	) {
+	mouseDownOnItem(e: MouseEvent, itemIndex: number, itemId: string, itemElm: HTMLElement, itemContext: DragRoot) {
 		if (e.button !== 0) {
 			e.preventDefault()
 			return
 		}
 		// this.mDownOnItemId = itemId;
 		this.mDownListItemIndex = itemIndex
-		this.mDownListItemOrigin = itemOriginArr
+		// this.mDownListItemOrigin.items = itemOriginArr
+		this.mDownListItemContext = itemContext
 		this.mDownElm = itemElm
 		this.mDownOriginX = e.clientX
 		this.mDownOriginY = e.clientY
-		this.mDownItemRequiresDragHandle = dragHandle
-		this.mDownListItemZoneOrigin = itemOriginZoneTag
+		this.mDownItemRequiresDragHandle = itemContext.dragHandle
+		this.mDownListItemZoneOrigin = itemContext.zoneTag
 		this.mDownListItemId = itemId
-		this.mDownListItemZoneOriginId = itemZoneOriginId
+		this.mDownListItemZoneOriginId = itemContext.zoneId
 	}
 	//drag zone
 	dragZoneTagCounter = 0
@@ -69,8 +62,9 @@ class DraggableState {
 
 	//hover
 	hoverListItemIndex = $state<number | null>(null)
-	hoverListItemOrigin = $state<any[] | null>(null)
+	// hoverListItemOrigin = $state<any[] | null>(null)
 	hoverListItemContext = $state<DragRoot | null>(null)
+	hoverZoneContext = $state<DragRoot | null>(null)
 	hoverDragZoneTracker = $state<string[]>([])
 	hoverDragZoneIdTracker = $state<string[]>([])
 	hoverDragZone = $derived.by(() => {
@@ -93,9 +87,10 @@ class DraggableState {
 		this.mDownElm = null
 		this.mDownListItemId = null
 		this.mDownListItemIndex = null
-		this.mDownListItemOrigin = null
+		// this.mDownListItemOrigin = null
+		this.mDownListItemContext = null
 		this.hoverListItemIndex = null
-		this.hoverListItemOrigin = null
+		// this.hoverListItemOrigin = null
 		this.hoverListItemContext = null
 		this.mDownItemRequiresDragHandle = false
 		this.mDownOnDragHandle = false
@@ -259,7 +254,11 @@ class DraggableState {
 
 	//state checks
 	isDraggingItemInSameContext() {
-		return this.mDownListItemOrigin === this.hoverListItemOrigin
+		return (
+			this.mDownListItemContext !== null &&
+			this.hoverZoneContext !== null &&
+			this.mDownListItemContext.items === this.hoverZoneContext.items
+		)
 	}
 
 	isDraggingItemInSamePlace() {
@@ -287,8 +286,18 @@ class DraggableState {
 		)
 	}
 
+	isDraggingItemInEmptyList() {
+		return (
+			this.mDownListItemId !== null &&
+			this.hoverZoneContext !== null &&
+			this.isDragging &&
+			this.hoverZoneContext.items.length === 0
+		)
+	}
+
 	//global handlers
 	handleMouseUp = async (e: MouseEvent) => {
+		console.log("mouseup")
 		if (e.button === 0) this.mDownLeft = false
 		if (e.button === 1) this.mDownRight = false
 
@@ -297,18 +306,23 @@ class DraggableState {
 			return
 		}
 		//process drop target if any
+		console.log(
+			this.isDragging,
+			this.hoverZoneContext !== null,
+			this.mDownListItemIndex !== null,
+			this.mDownListItemContext !== null,
+		)
 		if (
 			this.isDragging &&
-			this.hoverListItemIndex !== null &&
-			this.hoverListItemOrigin !== null &&
+			this.hoverZoneContext !== null &&
 			this.mDownListItemIndex !== null &&
-			this.mDownListItemOrigin !== null
+			this.mDownListItemContext !== null
 		) {
+			console.log("passed valid drop target")
 			if (
 				this.isDraggingItemInSamePlace() ||
 				(this.isDraggingItemDirectlyAboveItself() && this.draggingHalf === "bottom") ||
 				(this.isDraggingItemDirectlyBelowItself() && this.draggingHalf === "top") ||
-				this.draggingHalf === null ||
 				this.isDraggingItemInMismatchingZoneTag() ||
 				this.isDraggingItemInsideItself()
 			) {
@@ -317,6 +331,82 @@ class DraggableState {
 			}
 
 			console.log("dropped!")
+			if (this.hoverZoneContext !== null && this.hoverListItemIndex === null) {
+				console.log('dropped in zone itself and not relative to item')
+				//dropped something in list itself and not on any item.
+				if (this.isDraggingItemInSameContext()) {
+					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+						console.log("dropped multiple")
+						arrayMove(
+							this.mDownListItemContext.items,
+							this.selectedListItems.map((a) => a.idx),
+							this.hoverZoneContext.items.length,
+						)
+
+						//waits for the reordering to occur, allowing the effect that sets the new index, to run
+						await tick()
+
+						//reselect items to update their state
+						const targetIds = this.selectedListItems.map((v) => v.id)
+						for (const id of targetIds) {
+							this.itemSelect(
+								id,
+								this.selectedListItemFirst.context.itemsExtras[id].idx,
+								this.selectedListItemFirst.context,
+							)
+						}
+					} else {
+						arrayMove(this.mDownListItemContext.items, this.mDownListItemIndex, this.hoverZoneContext.items.length)
+					}
+				} else {
+					if (
+						this.selectedListItems.length > 1 &&
+						this.selectedListItemFirst !== null &&
+						this.selectedListItemLastSelected !== null
+					) {
+						const targetIds = this.selectedListItems.map((a) => a.id)
+						arrayMoveToArray(
+							this.mDownListItemContext.items,
+							this.selectedListItems.map((a) => a.idx),
+							this.hoverZoneContext.items,
+							this.hoverZoneContext.items.length,
+						)
+
+						//remove any extra info from source array's ids removed
+						for (const id of targetIds) {
+							delete this.selectedListItemFirst.context.itemsExtras[id]
+						}
+
+						//waits for the reordering to occur, allowing the effect that sets the new index, to run
+						await tick()
+
+						//reselect items to update their state
+						for (const id of targetIds) {
+							this.itemSelect(id, this.hoverZoneContext.itemsExtras[id].idx, this.hoverZoneContext)
+						}
+						//update the context of first selected (and last selected?) to new list
+						this.selectedListItemFirst.context = this.hoverZoneContext
+					} else {
+						// im gonna be so honest i don't really know why forcing
+						// the offset to 1 before any placeholder checks when
+						// outside the originating list works
+						// offset = 1
+						arrayMoveToArray(
+							this.mDownListItemContext.items,
+							this.mDownListItemIndex,
+							this.hoverZoneContext.items,
+							this.hoverZoneContext.items.length,
+						)
+					}
+				}
+				this.resetDragState()
+				return
+			}
+			//from here on out, its doing checks related to dropping items on other items. so exit otherwise.
+			if (this.hoverListItemIndex === null || this.draggingHalf === null) {
+				this.resetDragState()
+				return
+			}
 			let offset = -1
 			if (this.selectedListItems.length > 1) {
 				// offset = this.hoverListItemIndex < this.selectedListItems[0].idx ? 1 : -(this.selectedListItems.length - 1)
@@ -337,7 +427,7 @@ class DraggableState {
 					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
 						console.log("dropped multiple")
 						arrayMove(
-							this.mDownListItemOrigin,
+							this.mDownListItemContext.items,
 							this.selectedListItems.map((a) => a.idx),
 							this.hoverListItemIndex + offset,
 						)
@@ -358,7 +448,7 @@ class DraggableState {
 							console.log("after item select", $state.snapshot(this.selectedListItems))
 						}
 					} else {
-						arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset)
+						arrayMove(this.mDownListItemContext.items, this.mDownListItemIndex, this.hoverListItemIndex + offset)
 					}
 				} else {
 					// im gonna be so honest i don't really know why forcing
@@ -373,9 +463,9 @@ class DraggableState {
 					) {
 						const targetIds = this.selectedListItems.map((a) => a.id)
 						arrayMoveToArray(
-							this.mDownListItemOrigin,
+							this.mDownListItemContext.items,
 							this.selectedListItems.map((a) => a.idx),
-							this.hoverListItemOrigin,
+							this.hoverZoneContext.items,
 							this.hoverListItemIndex + offset,
 						)
 
@@ -399,9 +489,9 @@ class DraggableState {
 						// outside the originating list works
 						// offset = 1
 						arrayMoveToArray(
-							this.mDownListItemOrigin,
+							this.mDownListItemContext.items,
 							this.mDownListItemIndex,
-							this.hoverListItemOrigin,
+							this.hoverZoneContext.items,
 							this.hoverListItemIndex + offset,
 						)
 					}
@@ -413,7 +503,7 @@ class DraggableState {
 					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
 						console.log("dropped multiple")
 						arrayMove(
-							this.mDownListItemOrigin,
+							this.mDownListItemContext.items,
 							this.selectedListItems.map((a) => a.idx),
 							this.hoverListItemIndex + offset - 1,
 						)
@@ -434,7 +524,7 @@ class DraggableState {
 							console.log("after item select", $state.snapshot(this.selectedListItems))
 						}
 					} else {
-						arrayMove(this.mDownListItemOrigin, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
+						arrayMove(this.mDownListItemContext.items, this.mDownListItemIndex, this.hoverListItemIndex + offset - 1)
 					}
 				} else {
 					// im gonna be so honest i don't really know why forcing
@@ -449,9 +539,9 @@ class DraggableState {
 					) {
 						const targetIds = this.selectedListItems.map((v) => v.id)
 						arrayMoveToArray(
-							this.mDownListItemOrigin,
+							this.mDownListItemContext.items,
 							this.selectedListItems.map((a) => a.idx),
-							this.hoverListItemOrigin,
+							this.hoverZoneContext.items,
 							this.hoverListItemIndex + offset - 1,
 						)
 
@@ -475,9 +565,9 @@ class DraggableState {
 						// outside the originating list works
 						// offset = 1
 						arrayMoveToArray(
-							this.mDownListItemOrigin,
+							this.mDownListItemContext.items,
 							this.mDownListItemIndex,
-							this.hoverListItemOrigin,
+							this.hoverZoneContext.items,
 							this.hoverListItemIndex + offset - 1,
 						)
 					}

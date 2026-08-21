@@ -20,6 +20,8 @@
 		if (dragState.zoneTag === null || dragState.zoneId === null) return
 		globalDragState.hoverDragZoneTracker.push(dragState.zoneTag)
 		globalDragState.hoverDragZoneIdTracker.push(dragState.zoneId)
+		globalDragState.hoverListItemIndex = null
+		globalDragState.hoverListItemContext = null
 	}
 
 	function onmouseleave(e: MouseEvent) {
@@ -39,6 +41,16 @@
 		)
 	}
 
+	// use capture since lists could be nested, and we'd want to process the frontmost one.
+	// this still processes each underlying item, but the end result is the frontmost.
+	function onmousemovecapture(e: MouseEvent) {
+		// console.log(isBeingDraggedOver);
+		if (dragState.zoneId !== globalDragState.hoverDragZoneId) return
+		if (globalDragState.hoverZoneContext !== dragState) globalDragState.hoverZoneContext = dragState
+		if (!globalDragState.isDragging || dragState.items.length > 0) return
+		console.log("moving in id", dragState.zoneId)
+	}
+
 	// function onmousemove(e: MouseEvent) {
 	//   e.stopPropagation()
 	//   // e.stopImmediatePropagation()
@@ -46,7 +58,7 @@
 	// }
 </script>
 
-<div {onmouseenter} {onmouseleave}>
+<div {onmouseenter} {onmouseleave} {onmousemovecapture} style="background-color: yellow;">
 	<!-- <p>tesaat</p> -->
 	{@render children?.()}
 </div>

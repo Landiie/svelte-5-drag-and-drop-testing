@@ -295,7 +295,6 @@
 		<h5 style="font-size: 2rem;">item down</h5>
 		<p>id: {globalDragState.mDownListItemId}</p>
 		<p>index: {globalDragState.mDownListItemIndex}</p>
-		<p>origin (hash of list, not great): {generateHash(String(globalDragState.mDownListItemOrigin))}</p>
 		<p>zone origin id: {globalDragState.mDownListItemZoneOriginId}</p>
 		<p>mDownListItemZoneOrigin: {globalDragState.mDownListItemZoneOrigin}</p>
 		<h5 style="font-size: 2rem;">hovering over list</h5>
@@ -327,11 +326,6 @@
 			<p>drag select: {globalDragState.isDraggingSelect}</p>
 			<p>items selected count: {globalDragState.selectedListItems.length}</p>
 			<p>items selected: {globalDragState.selectedListItems.toString()}</p>
-			<p>
-				items selected first: {globalDragState.selectedListItemFirst
-					? `${globalDragState.selectedListItemFirst.id},  ${globalDragState.selectedListItemFirst.idx}, ${globalDragState.selectedListItemFirst.zoneId}`
-					: ""}
-			</p>
 		</div>
 	</div>
 </div>

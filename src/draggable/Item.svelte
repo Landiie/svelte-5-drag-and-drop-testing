@@ -21,7 +21,8 @@
 	let isBeingDraggedOver = $derived(
 		globalDragState.isDragging &&
 			globalDragState.hoverListItemIndex === itemIndex &&
-			dragState.items === globalDragState.hoverListItemOrigin,
+			globalDragState.hoverZoneContext !== null &&
+			dragState.items === globalDragState.hoverZoneContext.items,
 	)
 
 	const isSelected = $derived(
@@ -39,12 +40,9 @@
 		globalDragState.mouseDownOnItem(
 			e,
 			itemIndex,
-			dragState.items,
-			elm,
-			dragState.dragHandle,
-			globalDragState.hoverDragZone,
 			id,
-			dragState.zoneId,
+			elm,
+			dragState
 		)
 	}
 
@@ -52,7 +50,6 @@
 		// globalDragState.hoverListItemIndex = id;
 		if (elm === null) return
 		globalDragState.hoverListItemIndex = itemIndex
-		globalDragState.hoverListItemOrigin = dragState.items
 		globalDragState.hoverListItemContext = dragState
 		if (globalDragState.isDraggingSelect) {
 			globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
@@ -69,7 +66,13 @@
 			e.pageY < globalDragState.mDownY - ITEM_SELECT_CLICK_THRESHOLD
 		)
 			return
-		console.log('click registered, diff between origin:', 'x', globalDragState.mDownX - e.pageX, 'y', globalDragState.mDownY - e.pageY)
+		console.log(
+			"click registered, diff between origin:",
+			"x",
+			globalDragState.mDownX - e.pageX,
+			"y",
+			globalDragState.mDownY - e.pageY,
+		)
 		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 	}
 
@@ -77,7 +80,7 @@
 	// this still processes each underlying item, but the end result is the frontmost.
 	function onmousemovecapture(e: MouseEvent) {
 		// console.log(isBeingDraggedOver);
-		if (isBeingDraggedOver && elm !== null) {
+		if (isBeingDraggedOver && elm !== null && !globalDragState.isDraggingItemInEmptyList()) {
 			const bounds = elm.getBoundingClientRect()
 			//console.log(e.clientY, bounds.top, bounds.top + bounds.height / 2);
 			if (e.clientY > bounds.top + bounds.height / 2) {
@@ -95,6 +98,8 @@
 
 	function onmouseleave(e: MouseEvent) {
 		// placeholderPosition = null;
+		globalDragState.hoverListItemIndex = null
+		globalDragState.hoverListItemContext = null
 		globalDragState.draggingHalf = null
 	}
 

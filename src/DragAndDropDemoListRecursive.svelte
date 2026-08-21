@@ -60,7 +60,7 @@
 		padding-left: 1rem;
 	}
 	.zone {
-		padding-top: 1rem;
+		/* padding-top: 1rem; */
 		padding-bottom: 1rem;
 	}
 </style>
