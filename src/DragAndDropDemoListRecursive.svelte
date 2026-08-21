@@ -61,7 +61,8 @@
 		padding-bottom: 1rem;
 	}
 	.zone {
+		min-height: 1rem;
 		/* padding-top: 1rem; */
-		padding-bottom: 1rem;
+		/* padding-bottom: 1rem; */
 	}
 </style>
