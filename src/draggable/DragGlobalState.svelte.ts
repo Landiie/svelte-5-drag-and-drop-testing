@@ -149,7 +149,7 @@ class DraggableState {
 					for (let i = 0; i < this.selectedListItems.length; i++) {
 						const item = this.selectedListItems[i]
 						if (item.id === itemId) {
-							this.selectedListItems = this.selectedListItems.splice(i, 1)
+							this.selectedListItems.splice(i, 1)
 							break
 						}
 					}
