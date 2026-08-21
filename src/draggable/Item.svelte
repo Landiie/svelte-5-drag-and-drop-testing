@@ -12,6 +12,8 @@
 
 	const dragState = getDragState()
 
+	const ITEM_SELECT_CLICK_THRESHOLD = 5
+
 	let elm: null | HTMLElement = null
 
 	// let isMouseDown = false;
@@ -59,6 +61,15 @@
 
 	function onclick(e: MouseEvent) {
 		if (elm === null) return
+		//prevents a click from registering if the mdown was too far from mup (when click actually registers)
+		if (
+			e.pageX > globalDragState.mDownX + ITEM_SELECT_CLICK_THRESHOLD ||
+			e.pageX < globalDragState.mDownX - ITEM_SELECT_CLICK_THRESHOLD ||
+			e.pageY > globalDragState.mDownY + ITEM_SELECT_CLICK_THRESHOLD ||
+			e.pageY < globalDragState.mDownY - ITEM_SELECT_CLICK_THRESHOLD
+		)
+			return
+		console.log('click registered, diff between origin:', 'x', globalDragState.mDownX - e.pageX, 'y', globalDragState.mDownY - e.pageY)
 		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 	}
 
