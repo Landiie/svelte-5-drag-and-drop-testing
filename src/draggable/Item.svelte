@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { Snippet } from "svelte"
+	import { onMount, type Snippet } from "svelte"
 	import { getState as getDragState } from "./DraggableState.svelte"
 	import { getState as getGlobalDragState } from "./DragGlobalState.svelte"
 	const globalDragState = getGlobalDragState()
 
 	import DragPlaceholder from "./DragPlaceholder.svelte"
 	import type { itemType } from "../types"
-	import { arrayOfObjsIncludes, arrayRemoveItemAll } from "../utils.svelte"
+	import { arrayOfObjsIncludes, arrayRemoveItemAll } from "../utils"
 
 	const { children, id, itemIndex }: { children?: Snippet; id: string; itemIndex: number } = $props()
 
@@ -51,6 +51,7 @@
 		if (elm === null) return
 		globalDragState.hoverListItemIndex = itemIndex
 		globalDragState.hoverListItemOrigin = dragState.items
+		globalDragState.hoverListItemContext = dragState
 		if (globalDragState.isDraggingSelect) {
 			globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 		}
@@ -124,7 +125,14 @@
 
 	$effect(() => {
 		if (elm === null) return
-		dragState.itemsExtras[id] = {elm, idx: itemIndex}
+		dragState.itemsExtras[id] = { elm, idx: itemIndex }
+	})
+
+	onMount(() => {
+		return () => {
+			// console.log("unmounted", id)
+			//delete dragState.itemsExtras[id]
+		}
 	})
 
 	function allowedPlaceholderBottom() {

@@ -11,7 +11,7 @@
 	import { Draggable } from "./draggable/index.svelte"
 	import Item from "./draggable/Item.svelte"
 	import type { itemType } from "./types"
-	import { generateHash } from "./utils.svelte"
+	import { generateHash } from "./utils"
 
 	let items = $state<itemType[]>([
 		{

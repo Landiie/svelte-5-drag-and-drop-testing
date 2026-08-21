@@ -2,7 +2,7 @@
 	import { onDestroy, onMount, type Snippet } from "svelte"
 	import { getState as getDragState, setState as setDragState } from "./DraggableState.svelte"
 	import { getState as getGlobalDragState, setState as setGlobalDragState } from "./DragGlobalState.svelte"
-	import { generateHash } from "../utils.svelte"
+	import { generateHash } from "../utils"
 	import ItemSelectBox from "./ItemSelectBox.svelte"
 
 	const { items = $bindable(), dragSelect, children }: { items: any[]; dragSelect?: boolean; children?: Snippet } = $props()

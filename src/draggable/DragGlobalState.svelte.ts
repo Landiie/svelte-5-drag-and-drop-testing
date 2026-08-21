@@ -1,6 +1,6 @@
 import { getContext, setContext, tick } from "svelte"
-import { arrayMove, arrayMoveToArray, arrayOfObjsIncludes } from "../utils.svelte"
-import type { DragRoot } from "./DraggableState.svelte"
+import { arrayMove, arrayMoveToArray, arrayOfObjsIncludes } from "../utils"
+import { DragRoot } from "./DraggableState.svelte"
 
 const DRAG_DEADZONE_X = 5
 const DRAG_DEADZONE_Y = 5
@@ -70,6 +70,7 @@ class DraggableState {
 	//hover
 	hoverListItemIndex = $state<number | null>(null)
 	hoverListItemOrigin = $state<any[] | null>(null)
+	hoverListItemContext = $state<DragRoot | null>(null)
 	hoverDragZoneTracker = $state<string[]>([])
 	hoverDragZoneIdTracker = $state<string[]>([])
 	hoverDragZone = $derived.by(() => {
@@ -95,6 +96,7 @@ class DraggableState {
 		this.mDownListItemOrigin = null
 		this.hoverListItemIndex = null
 		this.hoverListItemOrigin = null
+		this.hoverListItemContext = null
 		this.mDownItemRequiresDragHandle = false
 		this.mDownOnDragHandle = false
 		this.isDragging = false
@@ -363,7 +365,8 @@ class DraggableState {
 					// the offset to 1 before any placeholder checks when
 					// outside the originating list works
 					offset = 1
-					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null && this.hoverListItemContext !== null && this.selectedListItemLastSelected !== null) {
+						const targetIds = this.selectedListItems.map((a) => a.id)
 						arrayMoveToArray(
 							this.mDownListItemOrigin,
 							this.selectedListItems.map((a) => a.idx),
@@ -371,18 +374,24 @@ class DraggableState {
 							this.hoverListItemIndex + offset,
 						)
 
+						//remove any extra info from source array's ids removed
+						for (const id of targetIds) {
+							delete this.selectedListItemFirst.context.itemsExtras[id]
+						}
+
 						//waits for the reordering to occur, allowing the effect that sets the new index, to run
 						await tick()
 
 						//reselect items to update their state
-						const targetIds = this.selectedListItems.map((v) => v.id)
 						for (const id of targetIds) {
 							this.itemSelect(
 								id,
-								this.selectedListItemFirst.context.itemsExtras[id].idx,
-								this.selectedListItemFirst.context,
+								this.hoverListItemContext.itemsExtras[id].idx,
+								this.hoverListItemContext,
 							)
 						}
+						//update the context of first selected (and last selected?) to new list
+						this.selectedListItemFirst.context = this.hoverListItemContext
 					} else {
 						// im gonna be so honest i don't really know why forcing
 						// the offset to 1 before any placeholder checks when
@@ -430,8 +439,10 @@ class DraggableState {
 					// im gonna be so honest i don't really know why forcing
 					// the offset to 1 before any placeholder checks when
 					// outside the originating list works
+
 					offset = 1
-					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null) {
+					if (this.selectedListItems.length > 1 && this.selectedListItemFirst !== null && this.hoverListItemContext !== null) {
+						const targetIds = this.selectedListItems.map((v) => v.id)
 						arrayMoveToArray(
 							this.mDownListItemOrigin,
 							this.selectedListItems.map((a) => a.idx),
@@ -439,18 +450,24 @@ class DraggableState {
 							this.hoverListItemIndex + offset - 1,
 						)
 
+						//remove any extra info from source array's ids removed
+						for (const id of targetIds) {
+							delete this.selectedListItemFirst.context.itemsExtras[id]
+						}
+
 						//waits for the reordering to occur, allowing the effect that sets the new index, to run
 						await tick()
 
 						//reselect items to update their state
-						const targetIds = this.selectedListItems.map((v) => v.id)
 						for (const id of targetIds) {
 							this.itemSelect(
 								id,
-								this.selectedListItemFirst.context.itemsExtras[id].idx,
-								this.selectedListItemFirst.context,
+								this.hoverListItemContext.itemsExtras[id].idx,
+								this.hoverListItemContext,
 							)
 						}
+						//update the context of first selected (and last selected?) to new list
+						this.selectedListItemFirst.context = this.hoverListItemContext
 					} else {
 						// im gonna be so honest i don't really know why forcing
 						// the offset to 1 before any placeholder checks when
