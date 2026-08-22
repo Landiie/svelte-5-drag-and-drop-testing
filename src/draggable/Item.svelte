@@ -17,7 +17,7 @@
 
 	let elm: null | HTMLElement = null
 
-	let mDown = false;
+	let mDownOnSelectedItem = false;
 
 	// let isMouseDown = false;
 	// let isDragging = $state(false);
@@ -47,16 +47,19 @@
 	}
 
 	function onmousedown(e: MouseEvent) {
+		e.stopPropagation()
 		if (elm === null) return
-		mDown = true
-		if (arrayOfObjsIncludes(globalDragState.selectedListItems, "id", id)) return
+		if (arrayOfObjsIncludes(globalDragState.selectedListItems, "id", id)) {
+			mDownOnSelectedItem = true
+			return
+		} 
 		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 	}
 
 	function onmouseup(e: MouseEvent) {
-		// if (!mDown || elm === null) return
-		// mDown = false
-		// globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
+		if (!mDownOnSelectedItem || elm === null) return
+		mDownOnSelectedItem = false
+		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
 	}
 
 	function onmouseenter(e: MouseEvent) {
@@ -69,25 +72,26 @@
 		}
 	}
 
-	function onclick(e: MouseEvent) {
-		if (elm === null) return
-		//prevents a click from registering if the mdown was too far from mup (when click actually registers)
-		if (
-			e.pageX > globalDragState.mDownX + ITEM_SELECT_CLICK_THRESHOLD ||
-			e.pageX < globalDragState.mDownX - ITEM_SELECT_CLICK_THRESHOLD ||
-			e.pageY > globalDragState.mDownY + ITEM_SELECT_CLICK_THRESHOLD ||
-			e.pageY < globalDragState.mDownY - ITEM_SELECT_CLICK_THRESHOLD
-		)
-			return
-		console.log(
-			"click registered, diff between origin:",
-			"x",
-			globalDragState.mDownX - e.pageX,
-			"y",
-			globalDragState.mDownY - e.pageY,
-		)
-		globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
-	}
+	// function onclick(e: MouseEvent) {
+	// 	// e.stopPropagation()
+	// 	if (elm === null) return
+	// 	//prevents a click from registering if the mdown was too far from mup (when click actually registers)
+	// 	if (
+	// 		e.pageX > globalDragState.mDownX + ITEM_SELECT_CLICK_THRESHOLD ||
+	// 		e.pageX < globalDragState.mDownX - ITEM_SELECT_CLICK_THRESHOLD ||
+	// 		e.pageY > globalDragState.mDownY + ITEM_SELECT_CLICK_THRESHOLD ||
+	// 		e.pageY < globalDragState.mDownY - ITEM_SELECT_CLICK_THRESHOLD
+	// 	)
+	// 		return
+	// 	console.log(
+	// 		"click registered, diff between origin:",
+	// 		"x",
+	// 		globalDragState.mDownX - e.pageX,
+	// 		"y",
+	// 		globalDragState.mDownY - e.pageY,
+	// 	)
+	// 	globalDragState.handleItemSelect(e, dragState, id, itemIndex, elm)
+	// }
 
 	// use capture since lists could be nested, and we'd want to process the frontmost one.
 	// this still processes each underlying item, but the end result is the frontmost.
@@ -117,6 +121,7 @@
 	}
 
 	function onfocusin(e: FocusEvent) {
+		e.stopImmediatePropagation()
 		if (elm === null) return
 
 		// if (elm === null && !(e.target instanceof Element)) return
@@ -201,7 +206,7 @@
 	{onmouseenter}
 	{onmousemovecapture}
 	{onmouseleave}
-	{onclick}
+	// {onclick}
 	{onfocusin}
 >
 	{@render children?.()}

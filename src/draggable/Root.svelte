@@ -29,7 +29,7 @@
 </script>
 
 <!-- <div class="debug-info"></div> -->
-{#if dragState.isRootDragRoot}
+{#if dragState.isRootDragRoot && dragState.dragSelect}
 	{#if !globalDragState.isDragging && globalDragState.isDraggingSelect && globalDragState.dragSelectRoot === dragState}
 		<ItemSelectBox />
 	{/if}

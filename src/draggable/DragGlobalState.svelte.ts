@@ -128,7 +128,7 @@ class DraggableState {
 		if (this.isDragging || dragState.zoneId === null) return
 		console.log("handleItemSelect")
 		console.log("------------------------")
-		e.stopImmediatePropagation()
+		// e.stopImmediatePropagation()
 		if (e instanceof MouseEvent) {
 			console.log("mouse was used")
 			console.log("button used to trigger select: ", e.button)
